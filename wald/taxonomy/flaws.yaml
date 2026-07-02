@@ -1,0 +1,125 @@
+# Wald flaw taxonomy v1 — the API of the project.
+# Adding a flaw class = a record here + a detector + a mutation. Code never
+# hardcodes flaw semantics; prompts and reports are generated from this file.
+
+- id: leakage-fit-before-split
+  class: leakage
+  layer: static
+  severity: high
+  definition: >
+    A transformation (scaler, imputer, encoder, feature selector, PCA,
+    vectorizer) is fitted on data that contains the test set.
+  book_anchor: "ISLP ch. 5; validation leak (Chollet)"
+  failure_scenario: >
+    Test metrics are inflated; the production model will underperform the
+    reported numbers.
+  fix: >
+    Fit the transformer on the training split only; apply transform to the
+    test split.
+
+- id: leakage-future-feature
+  class: leakage
+  layer: static+narrative
+  severity: high
+  definition: >
+    A predictor contains information from after the target moment
+    (aggregates computed over the full period, total_/final_ columns,
+    churned_at derivatives).
+  book_anchor: "ISLP; temporal leakage"
+  failure_scenario: >
+    The model "predicts" with information unavailable at prediction time;
+    offline metrics collapse in production.
+  fix: >
+    Restrict feature construction to data timestamped before the target;
+    audit aggregate windows.
+
+- id: selection-survivorship-cohort
+  class: selection
+  layer: static+narrative
+  severity: high
+  definition: >
+    The cohort is filtered by a condition correlated with the outcome
+    (active/retained/completers only) while the conclusion is stated about
+    the whole population.
+  book_anchor: "Survivorship-bias-Wald-Ellenberg; Baltimore broker"
+  failure_scenario: >
+    Decisions justified by a metric that would look identical even if the
+    product destroyed value for the excluded group.
+  fix: >
+    Compute the metric on the full cohort (including churned units'
+    realized values), or scope the claim explicitly to the filtered group.
+
+- id: testing-multiple-uncorrected
+  class: testing
+  layer: static
+  severity: medium
+  definition: >
+    More than 5 statistical tests (or tests inside a loop) without a
+    multiple-comparison correction.
+  book_anchor: "Multiple-Testing-FWER-Inflation; Ellenberg"
+  failure_scenario: >
+    At alpha=0.05 the family-wise error rate makes at least one false
+    "discovery" more likely than none; reported findings are noise.
+  fix: >
+    Apply Bonferroni/Holm or FDR (statsmodels multipletests), or declare
+    the analysis exploratory and confirm on fresh data.
+
+- id: significance-meaningless
+  class: narrative
+  layer: narrative
+  severity: medium
+  definition: >
+    A conclusion rests on p<0.05 with negligible effect size, or on
+    "significance" from an underpowered study.
+  book_anchor: "Statistically-significant-but-meaningless-Ellenberg"
+  failure_scenario: >
+    Resources committed to an effect too small to matter, or a noise blip
+    treated as a finding.
+  fix: >
+    Report and interpret effect size with confidence intervals alongside
+    the p-value.
+
+- id: regression-to-mean-claim
+  class: narrative
+  layer: narrative
+  severity: high
+  definition: >
+    An extreme subgroup selected at time T, and its change toward T+1 read
+    as an effect of an intervention, without a control group.
+  book_anchor: "Regression-to-mean-Ellenberg"
+  failure_scenario: >
+    The intervention gets credit (or blame) for what is partly luck
+    reverting; the effect will not replicate.
+  fix: >
+    Add a control group of equally extreme units without the intervention,
+    or use shrinkage estimates.
+
+- id: linearity-extrapolation
+  class: narrative
+  layer: narrative
+  severity: medium
+  definition: >
+    A linear fit extrapolated outside the observed data range and read as
+    a forecast.
+  book_anchor: "Linearity-trap-Ellenberg"
+  failure_scenario: >
+    Trend projections far outside the data ("everyone obese by 2048")
+    drive planning.
+  fix: >
+    Restrict predictions to the observed range or model saturation
+    explicitly; label extrapolations as such.
+
+- id: baserate-accuracy-imbalanced
+  class: testing
+  layer: static
+  severity: medium
+  definition: >
+    Accuracy is the only reported metric while classes are imbalanced
+    (>80/20).
+  book_anchor: "base rate fallacy; ISLP classification metrics"
+  failure_scenario: >
+    A majority-class predictor achieves the same "94% accuracy"; the model
+    may have learned nothing.
+  fix: >
+    Report ROC-AUC / precision-recall / F1 alongside accuracy, and state
+    the class balance.
