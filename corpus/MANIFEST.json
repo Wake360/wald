@@ -1,0 +1,813 @@
+{
+  "built": "2026-07-02",
+  "clean": [
+    {
+      "file": "clean/churn-s11.ipynb",
+      "family": "churn",
+      "seed": 11
+    },
+    {
+      "file": "clean/churn-s12.ipynb",
+      "family": "churn",
+      "seed": 12
+    },
+    {
+      "file": "clean/churn-s13.ipynb",
+      "family": "churn",
+      "seed": 13
+    },
+    {
+      "file": "clean/churn-s14.ipynb",
+      "family": "churn",
+      "seed": 14
+    },
+    {
+      "file": "clean/abtest-s11.ipynb",
+      "family": "abtest",
+      "seed": 11
+    },
+    {
+      "file": "clean/abtest-s12.ipynb",
+      "family": "abtest",
+      "seed": 12
+    },
+    {
+      "file": "clean/abtest-s13.ipynb",
+      "family": "abtest",
+      "seed": 13
+    },
+    {
+      "file": "clean/abtest-s14.ipynb",
+      "family": "abtest",
+      "seed": 14
+    },
+    {
+      "file": "clean/fraud-s11.ipynb",
+      "family": "fraud",
+      "seed": 11
+    },
+    {
+      "file": "clean/fraud-s12.ipynb",
+      "family": "fraud",
+      "seed": 12
+    },
+    {
+      "file": "clean/fraud-s13.ipynb",
+      "family": "fraud",
+      "seed": 13
+    },
+    {
+      "file": "clean/fraud-s14.ipynb",
+      "family": "fraud",
+      "seed": 14
+    },
+    {
+      "file": "clean/housing-s11.ipynb",
+      "family": "housing",
+      "seed": 11
+    },
+    {
+      "file": "clean/housing-s12.ipynb",
+      "family": "housing",
+      "seed": 12
+    },
+    {
+      "file": "clean/housing-s13.ipynb",
+      "family": "housing",
+      "seed": 13
+    },
+    {
+      "file": "clean/housing-s14.ipynb",
+      "family": "housing",
+      "seed": 14
+    },
+    {
+      "file": "clean/cohort-s11.ipynb",
+      "family": "cohort",
+      "seed": 11
+    },
+    {
+      "file": "clean/cohort-s12.ipynb",
+      "family": "cohort",
+      "seed": 12
+    },
+    {
+      "file": "clean/cohort-s13.ipynb",
+      "family": "cohort",
+      "seed": 13
+    },
+    {
+      "file": "clean/cohort-s14.ipynb",
+      "family": "cohort",
+      "seed": 14
+    }
+  ],
+  "mutants": [
+    {
+      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s11__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/churn-s11.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/churn-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/churn-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s12__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/churn-s12.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/churn-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/churn-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s13__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/churn-s13.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/churn-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/churn-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s14__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/churn-s14.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/churn-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/churn-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s11__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/fraud-s11.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/fraud-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/fraud-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s11__baserate-accuracy-imbalanced__m0.ipynb",
+      "base": "clean/fraud-s11.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/fraud-s12__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/fraud-s12.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/fraud-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/fraud-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s12__baserate-accuracy-imbalanced__m0.ipynb",
+      "base": "clean/fraud-s12.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.8986666666666666
+      }
+    },
+    {
+      "file": "mutated/fraud-s13__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/fraud-s13.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/fraud-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/fraud-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s13__baserate-accuracy-imbalanced__m0.ipynb",
+      "base": "clean/fraud-s13.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/fraud-s14__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/fraud-s14.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/fraud-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/fraud-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s14__baserate-accuracy-imbalanced__m0.ipynb",
+      "base": "clean/fraud-s14.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9013333333333333
+      }
+    },
+    {
+      "file": "mutated/housing-s11__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/housing-s11.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/housing-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/housing-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s12__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/housing-s12.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/housing-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/housing-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s13__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/housing-s13.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/housing-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/housing-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s14__leakage-fit-before-split__m0.ipynb",
+      "base": "clean/housing-s14.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/housing-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/housing-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    }
+  ],
+  "discarded": [],
+  "provenance": "synthetic, self-authored (wald.corpus templates); MIT"
+}

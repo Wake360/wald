@@ -1,0 +1,27 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .[corpus,dev]
+      - run: python -m ipykernel install --user --name python3
+      # unit tests: fast, no kernel execution
+      - run: pytest tests/ --ignore=tests/test_gates.py -q
+      # golden gates G0+G1: rebuild the corpus from scratch (mutation verify
+      # executes notebooks) and assert precision/recall/FP thresholds
+      - run: wald corpus build --root corpus
+      - run: pytest tests/test_gates.py -q
+      - run: wald eval --corpus corpus --out evals
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: evals/
