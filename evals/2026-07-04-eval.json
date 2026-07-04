@@ -1,28 +1,28 @@
 {
   "date": "2026-07-04",
-  "corpus_built": "2026-07-02",
-  "n_clean": 47,
+  "corpus_built": "2026-07-04",
+  "n_clean": 75,
   "n_clean_real": 27,
-  "n_mutants": 64,
+  "n_mutants": 176,
   "n_discarded": 0,
   "confidence_floor": 0.8,
   "static_classes": {
     "baserate-accuracy-imbalanced": {
-      "tp": 4,
+      "tp": 8,
       "fn": 0,
       "fp": 0,
       "precision": 1.0,
       "recall": 1.0
     },
     "leakage-fit-before-split": {
-      "tp": 12,
+      "tp": 24,
       "fn": 0,
       "fp": 0,
       "precision": 1.0,
       "recall": 1.0
     },
     "testing-multiple-uncorrected": {
-      "tp": 40,
+      "tp": 96,
       "fn": 0,
       "fp": 0,
       "precision": 1.0,
@@ -31,7 +31,7 @@
   },
   "candidate_classes": {
     "selection-survivorship-cohort": {
-      "tp": 8,
+      "tp": 16,
       "fn": 0,
       "recall": 1.0
     }

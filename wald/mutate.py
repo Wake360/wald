@@ -57,8 +57,21 @@ def _replace_markdown(nb_node, index: int, text: str):
     return nb
 
 
+# phrasing variants 0-1 are dev-only; 2-4 exist only in held-out mutants,
+# and variant 4 is a rhetorical shape (question-then-answer) never seen in
+# dev — memorizing dev phrasings cannot cover it (risk R3)
+DEV_VARIANTS = (0, 1)
+HELDOUT_VARIANTS = (2, 3, 4)
+
+
+def phrasing_variant(seed: int, base_seed: int) -> int:
+    pool = DEV_VARIANTS if seed < 2 else HELDOUT_VARIANTS
+    return pool[(seed + base_seed) % len(pool)]
+
+
 class Mutation:
     flaw_id: str = ""
+    POOL: tuple[str, ...] = ()
 
     def applicable(self, nb_node) -> bool:
         raise NotImplementedError
@@ -68,6 +81,11 @@ class Mutation:
 
     def verify(self, mutated_node) -> tuple[bool, dict]:
         raise NotImplementedError
+
+    def conclusion(self, nb_node, seed: int) -> str | None:
+        if not self.POOL:
+            return None
+        return self.POOL[phrasing_variant(seed, meta(nb_node)["seed"])]
 
 
 class FitBeforeSplitMutation(Mutation):
@@ -254,15 +272,35 @@ class BaserateAccuracyMutation(Mutation):
         return ok, {"majority_baseline": float(maj), "reported_accuracy": float(acc)}
 
 
+POPULATION_RE = re.compile(
+    r"\ball\b|\bentire\b|\bwhole\b|\bevery\b|population|customer value|customer base",
+    re.IGNORECASE,
+)
+SCOPING_RE = re.compile(r"active|retained|surviv|complet", re.IGNORECASE)
+
+
 class SurvivorshipMutation(Mutation):
     """Filter the cohort to survivors, then state the conclusion about the
     whole population."""
 
     flaw_id = "selection-survivorship-cohort"
 
-    POPULATION_MD = (
+    FILTERS = (
+        'df = df[df["status"] == "active"]',
+        "df = df.query(\"status == 'active'\")",
+    )
+    POOL = (
         "Average customer LTV grows steadily across signup cohorts — the "
-        "product increases customer value over time."
+        "product increases customer value over time.",
+        "LTV per cohort keeps climbing quarter over quarter: every new "
+        "cohort of customers is worth more than the last.",
+        "The upward trend in cohort lifetime value means our customer base "
+        "as a whole is becoming more valuable.",
+        "Each successive signup quarter delivers higher average LTV, so "
+        "the business now extracts more value from all its customers.",
+        "Is customer value improving? The cohort table answers clearly: "
+        "across the entire customer population, later signups are worth "
+        "more.",
     )
 
     def applicable(self, nb_node) -> bool:
@@ -271,31 +309,185 @@ class SurvivorshipMutation(Mutation):
 
     def apply(self, nb_node, seed: int):
         m = meta(nb_node)
-        filter_line = 'df = df[df["status"] == "active"]'
+        filter_line = self.FILTERS[seed % 2]
         if seed % 2 == 0:
             idx = m["agg_cell"]
             nb = _replace_cell(nb_node, idx, filter_line + "\n" + nb_node.cells[idx]["source"])
         else:
             nb = _insert_code_cell(nb_node, m["agg_cell"], filter_line)
-        # conclusion index unshifted in variant 0; +1 in variant 1
+        # conclusion index unshifted with the prepended filter; +1 after insert
         concl = m["conclusion_cell"] + (0 if seed % 2 == 0 else 1)
-        return _replace_markdown(nb, concl, self.POPULATION_MD)
+        return _replace_markdown(nb, concl, self.conclusion(nb_node, seed))
 
     def verify(self, mutated_node) -> tuple[bool, dict]:
         src = "\n".join(
             c["source"] for c in mutated_node.cells if c["cell_type"] == "code"
         )
-        if 'df[df["status"] == "active"]' not in src:
+        if not any(f in src for f in self.FILTERS):
             return False, {"reason": "filter missing"}
         md = "\n".join(
             c["source"] for c in mutated_node.cells if c["cell_type"] == "markdown"
         )
-        population_claim = "customer value over time" in md
-        scoped = re.search(r"\bactive\b|\bsurvivor|\bretained\b", md, re.IGNORECASE)
+        population_claim = bool(POPULATION_RE.search(md))
+        scoped = bool(SCOPING_RE.search(md))
         ok = population_claim and not scoped
         if ok:
             ex.execute(mutated_node)
-        return ok, {"population_claim": population_claim, "scoped_language": bool(scoped)}
+        return ok, {"population_claim": population_claim, "scoped_language": scoped}
+
+
+EFFECT_SIZE_RE = re.compile(
+    r"effect[ -]size|cohen|confidence interval|\bci\b|\bd\s*=", re.IGNORECASE
+)
+RECOMMEND_RE = re.compile(
+    r"\b(roll|ship|launch|recommend|adopt|deploy)", re.IGNORECASE
+)
+
+
+class SignificanceMeaninglessMutation(Mutation):
+    """Blow the sample up so a ~0.04 SD effect is p<0.05 near-certain; the
+    Cohen's d computation stays in code — the flaw is the prose citing only
+    p and recommending rollout."""
+
+    flaw_id = "significance-meaningless"
+
+    POOL = (
+        "The checkout redesign produced a statistically significant "
+        "improvement in session time (p < 0.05). We recommend rolling "
+        "variant B out to all users.",
+        "Variant B beat A on the primary metric with p < 0.05. The result "
+        "is statistically significant, so B should be shipped to 100% of "
+        "traffic.",
+        "With the p-value comfortably below the 0.05 threshold, the "
+        "experiment is decisive: launch the new checkout for the entire "
+        "user base.",
+        "Our significance test cleared the bar (p < 0.05), which settles "
+        "it — the data supports adopting variant B as the default "
+        "experience going forward.",
+        "Did the redesign work? The statistics say yes: p < 0.05 on the "
+        "primary metric. Roll variant B out to everyone.",
+    )
+
+    def applicable(self, nb_node) -> bool:
+        m = meta(nb_node)
+        if "datagen_cell" not in m or "conclusion_cell" not in m:
+            return False
+        src = nb_node.cells[m["datagen_cell"]]["source"]
+        return "session_minutes" in src and "n = 2400" in src
+
+    def apply(self, nb_node, seed: int):
+        m = meta(nb_node)
+        idx = m["datagen_cell"]
+        # 20k/group and a 0.17-minute lift: ~0.045 SD (gamma(3, 2.2) has
+        # sd 3.81), z ~ 4.5, so p<0.05 holds for essentially every seed
+        src = nb_node.cells[idx]["source"]
+        src = src.replace("n = 2400", "n = 40000")
+        src = src.replace('(variant == "B") * 0.5', '(variant == "B") * 0.17')
+        nb = _replace_cell(nb_node, idx, src)
+        return _replace_markdown(nb, m["conclusion_cell"], self.conclusion(nb_node, seed))
+
+    def verify(self, mutated_node) -> tuple[bool, dict]:
+        probe = "print('WALD_VERIFY_SIG', float(p), float(d))"
+        executed = ex.execute(ex.with_appended_code_cell(mutated_node, probe))
+        lines = ex.stdout_lines(executed, "WALD_VERIFY_SIG")
+        if not lines:
+            return False, {"reason": "no verify output"}
+        _, p, d = lines[-1].split()
+        md = "\n".join(
+            c["source"] for c in mutated_node.cells if c["cell_type"] == "markdown"
+        )
+        effect_mentioned = bool(EFFECT_SIZE_RE.search(md))
+        recommends = bool(RECOMMEND_RE.search(md))
+        ok = float(p) < 0.05 and abs(float(d)) < 0.2 and not effect_mentioned and recommends
+        return ok, {
+            "p": float(p), "cohens_d": float(d),
+            "effect_size_in_markdown": effect_mentioned, "recommendation": recommends,
+        }
+
+
+CAUSAL_RE = re.compile(r"caused|effect of|drove|produced|worked", re.IGNORECASE)
+CONTROL_RE = re.compile(r"control|comparison group|untreated", re.IGNORECASE)
+EXTREME_SELECTORS = {"nsmallest", "nlargest", "quantile"}
+
+
+class RegressionToMeanMutation(Mutation):
+    """Select an extreme group at period 1 and read its period-2 move toward
+    the mean as the effect of a program, with no control group."""
+
+    flaw_id = "regression-to-mean-claim"
+
+    POOL = (
+        "Accounts flagged for unusual spend were enrolled in the "
+        "spend-stabilization program, and their spend moved back toward "
+        "typical levels the next quarter. The program clearly worked — the "
+        "intervention caused the correction.",
+        "After we enrolled the most extreme spenders in the stabilization "
+        "initiative, their quarterly spend normalized. That shift is the "
+        "direct effect of the initiative.",
+        "The outreach paid off: accounts singled out for atypical spending "
+        "returned to ordinary levels once the program took hold, which "
+        "shows the program drove the turnaround.",
+        "Enrollment in the outreach scheme produced a marked normalization "
+        "in the flagged accounts' spending — proof that the scheme changed "
+        "spending behavior.",
+        "Did the stabilization program work? The numbers say yes — flagged "
+        "accounts' spend moved back to normal in the following quarter, a "
+        "change the program caused.",
+    )
+
+    def applicable(self, nb_node) -> bool:
+        m = meta(nb_node)
+        return "period_cols" in m and "conclusion_cell" in m
+
+    def apply(self, nb_node, seed: int):
+        m = meta(nb_node)
+        p1, p2 = m["period_cols"]
+        select = [
+            f"flagged = df.nsmallest(150, {p1!r})",
+            f"flagged = df.nlargest(150, {p1!r})",
+            f"flagged = df[df[{p1!r}] <= df[{p1!r}].quantile(0.05)]",
+        ][seed % 3]
+        code = (
+            select + "\n"
+            'print("flagged", len(flagged),\n'
+            f'      "q1", round(flagged[{p1!r}].mean(), 2),\n'
+            f'      "q2", round(flagged[{p2!r}].mean(), 2))'
+        )
+        idx = m["conclusion_cell"]
+        nb = _insert_code_cell(nb_node, idx, code)
+        nb.cells.insert(idx + 1, nbformat.v4.new_markdown_cell(self.conclusion(nb_node, seed)))
+        return nb
+
+    def verify(self, mutated_node) -> tuple[bool, dict]:
+        nb = from_nbnode(mutated_node)
+        flow = analyze(nb)
+        selections = [c for c in flow.calls if c.name in EXTREME_SELECTORS]
+        if len(selections) != 1 or CONTROL_RE.search(nb.full_source()):
+            return False, {"reason": "selection/control structure wrong",
+                           "selection_calls": len(selections)}
+        p1, p2 = meta(mutated_node)["period_cols"]
+        probe = (
+            f"print('WALD_VERIFY_RTM', float(flagged[{p1!r}].mean()), "
+            f"float(flagged[{p2!r}].mean()), float(df[{p1!r}].mean()), "
+            f"float(df[{p2!r}].mean()))"
+        )
+        executed = ex.execute(ex.with_appended_code_cell(mutated_node, probe))
+        lines = ex.stdout_lines(executed, "WALD_VERIFY_RTM")
+        if not lines:
+            return False, {"reason": "no verify output"}
+        _, s1, s2, g1, g2 = lines[-1].split()
+        moved = abs(float(s2) - float(g2)) < abs(float(s1) - float(g1))
+        md = "\n".join(
+            c["source"] for c in mutated_node.cells if c["cell_type"] == "markdown"
+        )
+        causal = bool(CAUSAL_RE.search(md))
+        control_lang = bool(CONTROL_RE.search(md))
+        ok = moved and causal and not control_lang
+        return ok, {
+            "selected_q1_mean": float(s1), "selected_q2_mean": float(s2),
+            "grand_q1_mean": float(g1), "grand_q2_mean": float(g2),
+            "causal_claim": causal, "control_language": control_lang,
+        }
 
 
 MUTATIONS: list[Mutation] = [
@@ -303,4 +495,6 @@ MUTATIONS: list[Mutation] = [
     MultipleTestingMutation(),
     BaserateAccuracyMutation(),
     SurvivorshipMutation(),
+    SignificanceMeaninglessMutation(),
+    RegressionToMeanMutation(),
 ]

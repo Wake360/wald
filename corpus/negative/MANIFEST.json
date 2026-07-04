@@ -1,0 +1,725 @@
+{
+  "built": "2026-07-04",
+  "flags": [
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s11.ipynb",
+      "recipe": "effect-size-present",
+      "split": "dev",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s12.ipynb",
+      "recipe": "effect-size-present",
+      "split": "dev",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s13.ipynb",
+      "recipe": "effect-size-present",
+      "split": "dev",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s14.ipynb",
+      "recipe": "effect-size-present",
+      "split": "dev",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s11.ipynb",
+      "recipe": "scoped-claim",
+      "split": "dev",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s12.ipynb",
+      "recipe": "scoped-claim",
+      "split": "dev",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s13.ipynb",
+      "recipe": "scoped-claim",
+      "split": "dev",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s14.ipynb",
+      "recipe": "scoped-claim",
+      "split": "dev",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s11.ipynb",
+      "recipe": "control-group-present",
+      "split": "dev",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s11.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s12.ipynb",
+      "recipe": "control-group-present",
+      "split": "dev",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s12.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s13.ipynb",
+      "recipe": "control-group-present",
+      "split": "dev",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s13.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s14.ipynb",
+      "recipe": "control-group-present",
+      "split": "dev",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s14.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s21.ipynb",
+      "recipe": "effect-size-present",
+      "split": "heldout",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s22.ipynb",
+      "recipe": "effect-size-present",
+      "split": "heldout",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s23.ipynb",
+      "recipe": "effect-size-present",
+      "split": "heldout",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "significance-meaningless",
+      "claim_span": {
+        "cell": 4,
+        "quote": "we report the effect size alongside the p-value"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "stat, p = ttest_ind(a, b)"
+      },
+      "source_file": "clean/abtest-s24.ipynb",
+      "recipe": "effect-size-present",
+      "split": "heldout",
+      "why_false": "the cited analysis computes Cohen's d and the conclusion cell reports effect size alongside p"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s21.ipynb",
+      "recipe": "scoped-claim",
+      "split": "heldout",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s22.ipynb",
+      "recipe": "scoped-claim",
+      "split": "heldout",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s23.ipynb",
+      "recipe": "scoped-claim",
+      "split": "heldout",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "it is higher by construction, because it excludes churned customers' lower realized LTV"
+      },
+      "code_span": {
+        "cell": 4,
+        "quote": "retained = df[df[\"status\"] == \"active\"]"
+      },
+      "source_file": "clean/cohort-s24.ipynb",
+      "recipe": "scoped-claim",
+      "split": "heldout",
+      "why_false": "the claim cell explicitly scopes the second table to currently retained customers and reports the population number separately"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s21.ipynb",
+      "recipe": "control-group-present",
+      "split": "heldout",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s21.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s22.ipynb",
+      "recipe": "control-group-present",
+      "split": "heldout",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s22.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s23.ipynb",
+      "recipe": "control-group-present",
+      "split": "heldout",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s23.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "regression-to-mean-claim",
+      "claim_span": {
+        "cell": 4,
+        "quote": "The enrolled accounts' spend recovered strongly in the second quarter"
+      },
+      "code_span": {
+        "cell": 3,
+        "quote": "low = df.nsmallest(300, \"spend_q1\")"
+      },
+      "source_file": "clean/program-s24.ipynb",
+      "recipe": "control-group-present",
+      "split": "heldout",
+      "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
+    },
+    {
+      "flaw_id": "leakage-fit-before-split",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
+      },
+      "code_span": {
+        "cell": 5,
+        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
+      },
+      "source_file": "clean/program-s24.ipynb",
+      "recipe": "legit-cv-generalization",
+      "split": "heldout",
+      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s11__selection-survivorship-cohort__m0.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s11__selection-survivorship-cohort__m1.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s12__selection-survivorship-cohort__m0.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s12__selection-survivorship-cohort__m1.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s13__selection-survivorship-cohort__m0.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s13__selection-survivorship-cohort__m1.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s14__selection-survivorship-cohort__m0.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s14__selection-survivorship-cohort__m1.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "dev",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s21__selection-survivorship-cohort__m2.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s21__selection-survivorship-cohort__m3.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s22__selection-survivorship-cohort__m2.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Each successive signup quarter delivers higher average LTV, so the business now extracts more value from all its customers."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s22__selection-survivorship-cohort__m3.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "Each successive signup quarter delivers higher average LTV, so the business now extracts more value from all its customers."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s23__selection-survivorship-cohort__m2.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s23__selection-survivorship-cohort__m3.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 5,
+        "quote": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s24__selection-survivorship-cohort__m2.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    },
+    {
+      "flaw_id": "selection-survivorship-cohort",
+      "claim_span": {
+        "cell": 6,
+        "quote": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+      },
+      "code_span": {
+        "cell": 1,
+        "quote": "import numpy as np"
+      },
+      "source_file": "mutated/cohort-s24__selection-survivorship-cohort__m3.ipynb",
+      "recipe": "wrong-code-span",
+      "split": "heldout",
+      "why_false": "the cited code span is the imports cell and contains no cohort filter; the evidence does not support the flag"
+    }
+  ]
+}

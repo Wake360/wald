@@ -119,6 +119,26 @@ def test_survivorship_candidate_below_floor():
     assert match and match[0].confidence < 0.8
 
 
+def test_survivorship_candidate_flagged_on_query_idiom():
+    notebook = nb([
+        ("code", "df = df.query(\"status == 'active'\")"),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    flags = run_static(notebook)
+    match = [f for f in flags if f.flaw_id == "selection-survivorship-cohort"]
+    assert match and match[0].confidence < 0.8
+
+
+def test_survivorship_silent_on_query_non_risk_column():
+    notebook = nb([
+        ("code", "df = df.query(\"region == 'west'\")"),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    assert not [
+        f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"
+    ]
+
+
 def test_survivorship_silent_on_scoped_variable_name():
     notebook = nb([
         ("code", 'active = df[df["status"] == "active"]'),

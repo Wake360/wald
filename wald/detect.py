@@ -131,17 +131,20 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
 
     best: dict[object, Flag] = {}
 
-    def emit(call, confidence, leaked, evidence, key=None):
+    def emit(call, confidence, leaked, evidence, key=None, sink_cell=None):
         key = key if key is not None else id(call)
         if key in best and best[key].confidence >= confidence:
             return
+        extra = {"leaked_names": sorted(leaked)}
+        if sink_cell is not None:
+            extra["sink_cell"] = sink_cell  # CV sink cell, read by the pre-CV fusion rule
         best[key] = _make_flag(
             "leakage-fit-before-split",
             confidence=confidence,
             cell=call.cell,
             line=call.line,
             evidence=evidence,
-            leaked_names=sorted(leaked),
+            **extra,
         )
 
     for call in flow.calls:
@@ -198,7 +201,7 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
                         f"transformed output feeds `{sink.name}` (cell {sink.cell}); "
                         f"every CV fold's test rows were in the transformer fit"
                         + (" (fitted with labels)" if supervised else "")
-                    ))
+                    ), sink_cell=sink.cell)
 
         # -- imputation with statistics of the same frame, before the split --
         elif call.name in {"fillna", "replace"} and call.receiver is not None:
@@ -299,6 +302,20 @@ def detect_baserate_accuracy(nb: ParsedNotebook, flow: NotebookDataflow) -> list
 SURVIVOR_FILTER_RE = re.compile(
     r"(\w+)\s*=\s*\1\[\s*\1(?:\.(\w+)|\[\s*[\"'](\w+)[\"']\s*\])\s*(?:==|!=)",
 )
+# self-filter via .query, e.g. df = df.query("status == 'active'"); the
+# quoted column is the first identifier before the comparison operator
+SURVIVOR_QUERY_RE = re.compile(
+    r"(\w+)\s*=\s*\1\.query\(\s*[\"']\s*(\w+)\s*(?:==|!=)",
+)
+
+
+def _survivor_filter_columns(source: str):
+    """Yield (match_start, risk_column) for every self-scoping cohort filter
+    in a cell, across both the subscript and .query idioms."""
+    for m in SURVIVOR_FILTER_RE.finditer(source):
+        yield m.start(), (m.group(2) or m.group(3) or "").lower()
+    for m in SURVIVOR_QUERY_RE.finditer(source):
+        yield m.start(), m.group(2).lower()
 
 
 def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) -> list[Flag]:
@@ -307,8 +324,7 @@ def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) ->
     a real flag requires the narrative layer confirming a population claim."""
     flags = []
     for cell in nb.code_cells:
-        for m in SURVIVOR_FILTER_RE.finditer(cell.source):
-            column = (m.group(2) or m.group(3) or "").lower()
+        for start, column in _survivor_filter_columns(cell.source):
             if column not in SURVIVOR_COLUMNS:
                 continue
             aggregates_later = any(
@@ -318,7 +334,7 @@ def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) ->
             )
             if not aggregates_later:
                 continue
-            line = cell.source[: m.start()].count("\n") + 1
+            line = cell.source[:start].count("\n") + 1
             flags.append(
                 _make_flag(
                     "selection-survivorship-cohort",

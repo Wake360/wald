@@ -48,6 +48,11 @@
   fix: >
     Compute the metric on the full cohort (including churned units'
     realized values), or scope the claim explicitly to the filtered group.
+  narrative_enabled: true
+  disqualifiers:
+    - The claim is explicitly scoped to the filtered group (e.g. "among
+      active users...") rather than to the whole population.
+    - The filter column is unrelated to the outcome being measured.
 
 - id: testing-multiple-uncorrected
   class: testing
@@ -78,6 +83,11 @@
   fix: >
     Report and interpret effect size with confidence intervals alongside
     the p-value.
+  narrative_enabled: true
+  disqualifiers:
+    - An effect size or confidence interval is reported and interpreted
+      alongside the p-value, not just the p-value alone.
+    - The effect size is non-negligible.
 
 - id: regression-to-mean-claim
   class: narrative
@@ -93,6 +103,13 @@
   fix: >
     Add a control group of equally extreme units without the intervention,
     or use shrinkage estimates.
+  narrative_enabled: true
+  disqualifiers:
+    - A control group of equally extreme units is present alongside the
+      treated group.
+    - The language is explicitly non-causal (describes reversion, not an
+      intervention effect).
+    - No extreme-subset selection preceded the comparison.
 
 - id: linearity-extrapolation
   class: narrative

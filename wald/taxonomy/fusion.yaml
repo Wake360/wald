@@ -1,0 +1,39 @@
+# Fusion rules: static candidate + narrative finding -> promoted flag.
+# Rules are data, not code — fuse.py implements the two join predicates
+# (code-cell-equals-candidate-cell, claim-cites-sink-cell); this file only
+# names which join a rule uses and the confidence it emits.
+
+- id: survivorship-fused
+  static:
+    flaw_id: selection-survivorship-cohort
+    confidence_min: 0.50
+    confidence_max: 0.79
+  narrative:
+    flaw_id: selection-survivorship-cohort
+    join: code-cell-equals-candidate-cell
+  emit:
+    flaw_id: inherit
+    confidence: 0.91
+  verify: true
+
+- id: pre-cv-fused
+  static:
+    flaw_id: leakage-fit-before-split
+    confidence_min: 0.70
+    confidence_max: 0.79
+  narrative:
+    claim_kind: performance-generalization
+    join: claim-cites-sink-cell
+  emit:
+    flaw_id: inherit
+    confidence: 0.88
+  verify: true
+
+- id: solo-narrative
+  static: null
+  narrative:
+    any_enabled_finding: true
+  emit:
+    flaw_id: inherit
+    confidence: 0.80
+  verify: true

@@ -1,201 +1,302 @@
 {
-  "built": "2026-07-02",
+  "built": "2026-07-04",
   "clean": [
     {
       "file": "clean/churn-s11.ipynb",
       "family": "churn",
-      "seed": 11
+      "seed": 11,
+      "split": "dev"
     },
     {
       "file": "clean/churn-s12.ipynb",
       "family": "churn",
-      "seed": 12
+      "seed": 12,
+      "split": "dev"
     },
     {
       "file": "clean/churn-s13.ipynb",
       "family": "churn",
-      "seed": 13
+      "seed": 13,
+      "split": "dev"
     },
     {
       "file": "clean/churn-s14.ipynb",
       "family": "churn",
-      "seed": 14
+      "seed": 14,
+      "split": "dev"
     },
     {
       "file": "clean/abtest-s11.ipynb",
       "family": "abtest",
-      "seed": 11
+      "seed": 11,
+      "split": "dev"
     },
     {
       "file": "clean/abtest-s12.ipynb",
       "family": "abtest",
-      "seed": 12
+      "seed": 12,
+      "split": "dev"
     },
     {
       "file": "clean/abtest-s13.ipynb",
       "family": "abtest",
-      "seed": 13
+      "seed": 13,
+      "split": "dev"
     },
     {
       "file": "clean/abtest-s14.ipynb",
       "family": "abtest",
-      "seed": 14
+      "seed": 14,
+      "split": "dev"
     },
     {
       "file": "clean/fraud-s11.ipynb",
       "family": "fraud",
-      "seed": 11
+      "seed": 11,
+      "split": "dev"
     },
     {
       "file": "clean/fraud-s12.ipynb",
       "family": "fraud",
-      "seed": 12
+      "seed": 12,
+      "split": "dev"
     },
     {
       "file": "clean/fraud-s13.ipynb",
       "family": "fraud",
-      "seed": 13
+      "seed": 13,
+      "split": "dev"
     },
     {
       "file": "clean/fraud-s14.ipynb",
       "family": "fraud",
-      "seed": 14
+      "seed": 14,
+      "split": "dev"
     },
     {
       "file": "clean/housing-s11.ipynb",
       "family": "housing",
-      "seed": 11
+      "seed": 11,
+      "split": "dev"
     },
     {
       "file": "clean/housing-s12.ipynb",
       "family": "housing",
-      "seed": 12
+      "seed": 12,
+      "split": "dev"
     },
     {
       "file": "clean/housing-s13.ipynb",
       "family": "housing",
-      "seed": 13
+      "seed": 13,
+      "split": "dev"
     },
     {
       "file": "clean/housing-s14.ipynb",
       "family": "housing",
-      "seed": 14
+      "seed": 14,
+      "split": "dev"
     },
     {
       "file": "clean/cohort-s11.ipynb",
       "family": "cohort",
-      "seed": 11
+      "seed": 11,
+      "split": "dev"
     },
     {
       "file": "clean/cohort-s12.ipynb",
       "family": "cohort",
-      "seed": 12
+      "seed": 12,
+      "split": "dev"
     },
     {
       "file": "clean/cohort-s13.ipynb",
       "family": "cohort",
-      "seed": 13
+      "seed": 13,
+      "split": "dev"
     },
     {
       "file": "clean/cohort-s14.ipynb",
       "family": "cohort",
-      "seed": 14
+      "seed": 14,
+      "split": "dev"
+    },
+    {
+      "file": "clean/program-s11.ipynb",
+      "family": "program",
+      "seed": 11,
+      "split": "dev"
+    },
+    {
+      "file": "clean/program-s12.ipynb",
+      "family": "program",
+      "seed": 12,
+      "split": "dev"
+    },
+    {
+      "file": "clean/program-s13.ipynb",
+      "family": "program",
+      "seed": 13,
+      "split": "dev"
+    },
+    {
+      "file": "clean/program-s14.ipynb",
+      "family": "program",
+      "seed": 14,
+      "split": "dev"
+    },
+    {
+      "file": "clean/churn-s21.ipynb",
+      "family": "churn",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/churn-s22.ipynb",
+      "family": "churn",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/churn-s23.ipynb",
+      "family": "churn",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/churn-s24.ipynb",
+      "family": "churn",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/abtest-s21.ipynb",
+      "family": "abtest",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/abtest-s22.ipynb",
+      "family": "abtest",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/abtest-s23.ipynb",
+      "family": "abtest",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/abtest-s24.ipynb",
+      "family": "abtest",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/fraud-s21.ipynb",
+      "family": "fraud",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/fraud-s22.ipynb",
+      "family": "fraud",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/fraud-s23.ipynb",
+      "family": "fraud",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/fraud-s24.ipynb",
+      "family": "fraud",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/housing-s21.ipynb",
+      "family": "housing",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/housing-s22.ipynb",
+      "family": "housing",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/housing-s23.ipynb",
+      "family": "housing",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/housing-s24.ipynb",
+      "family": "housing",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/cohort-s21.ipynb",
+      "family": "cohort",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/cohort-s22.ipynb",
+      "family": "cohort",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/cohort-s23.ipynb",
+      "family": "cohort",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/cohort-s24.ipynb",
+      "family": "cohort",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/program-s21.ipynb",
+      "family": "program",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/program-s22.ipynb",
+      "family": "program",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/program-s23.ipynb",
+      "family": "program",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/program-s24.ipynb",
+      "family": "program",
+      "seed": 24,
+      "split": "heldout"
     }
   ],
   "mutants": [
-    {
-      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/abtest-s11.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 0,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/abtest-s11.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 1,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/abtest-s12.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 0,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/abtest-s12.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 1,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/abtest-s13.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 0,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/abtest-s13.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 1,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/abtest-s14.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 0,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
-    {
-      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/abtest-s14.ipynb",
-      "flaw_id": "testing-multiple-uncorrected",
-      "mutation_seed": 1,
-      "verified": true,
-      "evidence": {
-        "effective_tests": 11,
-        "correction_present": false
-      }
-    },
     {
       "file": "mutated/churn-s11__leakage-fit-before-split__m0.ipynb",
       "base": "clean/churn-s11.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1500,
@@ -207,6 +308,7 @@
       "base": "clean/churn-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -218,6 +320,7 @@
       "base": "clean/churn-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -225,10 +328,45 @@
       }
     },
     {
+      "file": "mutated/churn-s11__regression-to-mean-claim__m0.ipynb",
+      "base": "clean/churn-s11.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 25.90693333333333,
+        "selected_q2_mean": 37.44166666666667,
+        "grand_q1_mean": 51.76508,
+        "grand_q2_mean": 52.02310666666667,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "After we enrolled the most extreme spenders in the stabilization initiative, their quarterly spend normalized. That shift is the direct effect of the initiative."
+    },
+    {
+      "file": "mutated/churn-s11__regression-to-mean-claim__m1.ipynb",
+      "base": "clean/churn-s11.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 77.26026666666667,
+        "selected_q2_mean": 65.32793333333332,
+        "grand_q1_mean": 51.76508,
+        "grand_q2_mean": 52.02310666666667,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Accounts flagged for unusual spend were enrolled in the spend-stabilization program, and their spend moved back toward typical levels the next quarter. The program clearly worked \u2014 the intervention caused the correction."
+    },
+    {
       "file": "mutated/churn-s12__leakage-fit-before-split__m0.ipynb",
       "base": "clean/churn-s12.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1500,
@@ -240,6 +378,7 @@
       "base": "clean/churn-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -251,6 +390,7 @@
       "base": "clean/churn-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -258,10 +398,45 @@
       }
     },
     {
+      "file": "mutated/churn-s12__regression-to-mean-claim__m0.ipynb",
+      "base": "clean/churn-s12.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 24.910999999999998,
+        "selected_q2_mean": 39.02353333333333,
+        "grand_q1_mean": 51.98922666666667,
+        "grand_q2_mean": 51.61568666666667,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Accounts flagged for unusual spend were enrolled in the spend-stabilization program, and their spend moved back toward typical levels the next quarter. The program clearly worked \u2014 the intervention caused the correction."
+    },
+    {
+      "file": "mutated/churn-s12__regression-to-mean-claim__m1.ipynb",
+      "base": "clean/churn-s12.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 78.87406666666666,
+        "selected_q2_mean": 66.38533333333334,
+        "grand_q1_mean": 51.98922666666667,
+        "grand_q2_mean": 51.61568666666667,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "After we enrolled the most extreme spenders in the stabilization initiative, their quarterly spend normalized. That shift is the direct effect of the initiative."
+    },
+    {
       "file": "mutated/churn-s13__leakage-fit-before-split__m0.ipynb",
       "base": "clean/churn-s13.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1500,
@@ -273,6 +448,7 @@
       "base": "clean/churn-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -284,6 +460,7 @@
       "base": "clean/churn-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -291,10 +468,45 @@
       }
     },
     {
+      "file": "mutated/churn-s13__regression-to-mean-claim__m0.ipynb",
+      "base": "clean/churn-s13.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 25.459133333333334,
+        "selected_q2_mean": 39.68533333333334,
+        "grand_q1_mean": 52.48027333333333,
+        "grand_q2_mean": 52.37934,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "After we enrolled the most extreme spenders in the stabilization initiative, their quarterly spend normalized. That shift is the direct effect of the initiative."
+    },
+    {
+      "file": "mutated/churn-s13__regression-to-mean-claim__m1.ipynb",
+      "base": "clean/churn-s13.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 79.4714,
+        "selected_q2_mean": 65.92473333333332,
+        "grand_q1_mean": 52.48027333333333,
+        "grand_q2_mean": 52.37934,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Accounts flagged for unusual spend were enrolled in the spend-stabilization program, and their spend moved back toward typical levels the next quarter. The program clearly worked \u2014 the intervention caused the correction."
+    },
+    {
       "file": "mutated/churn-s14__leakage-fit-before-split__m0.ipynb",
       "base": "clean/churn-s14.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1500,
@@ -306,6 +518,7 @@
       "base": "clean/churn-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -317,6 +530,7 @@
       "base": "clean/churn-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -324,186 +538,261 @@
       }
     },
     {
-      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/cohort-s11.ipynb",
+      "file": "mutated/churn-s14__regression-to-mean-claim__m0.ipynb",
+      "base": "clean/churn-s14.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 27.4058,
+        "selected_q2_mean": 38.774,
+        "grand_q1_mean": 52.934940000000005,
+        "grand_q2_mean": 51.92991333333333,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Accounts flagged for unusual spend were enrolled in the spend-stabilization program, and their spend moved back toward typical levels the next quarter. The program clearly worked \u2014 the intervention caused the correction."
+    },
+    {
+      "file": "mutated/churn-s14__regression-to-mean-claim__m1.ipynb",
+      "base": "clean/churn-s14.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 79.33213333333333,
+        "selected_q2_mean": 65.79466666666667,
+        "grand_q1_mean": 52.934940000000005,
+        "grand_q2_mean": 51.92991333333333,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "After we enrolled the most extreme spenders in the stabilization initiative, their quarterly spend normalized. That shift is the direct effect of the initiative."
+    },
+    {
+      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/cohort-s11.ipynb",
+      "file": "mutated/abtest-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s11__selection-survivorship-cohort__m0.ipynb",
-      "base": "clean/cohort-s11.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s11__significance-meaningless__m0.ipynb",
+      "base": "clean/abtest-s11.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 0.0015058059362628444,
+        "cohens_d": 0.03173500878776165,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Variant B beat A on the primary metric with p < 0.05. The result is statistically significant, so B should be shipped to 100% of traffic."
     },
     {
-      "file": "mutated/cohort-s11__selection-survivorship-cohort__m1.ipynb",
-      "base": "clean/cohort-s11.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s11__significance-meaningless__m1.ipynb",
+      "base": "clean/abtest-s11.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 0.0015058059362628444,
+        "cohens_d": 0.03173500878776165,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "The checkout redesign produced a statistically significant improvement in session time (p < 0.05). We recommend rolling variant B out to all users."
     },
     {
-      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/cohort-s12.ipynb",
+      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/cohort-s12.ipynb",
+      "file": "mutated/abtest-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s12__selection-survivorship-cohort__m0.ipynb",
-      "base": "clean/cohort-s12.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s12__significance-meaningless__m0.ipynb",
+      "base": "clean/abtest-s12.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 0.002386637349583579,
+        "cohens_d": 0.030372565373671122,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "The checkout redesign produced a statistically significant improvement in session time (p < 0.05). We recommend rolling variant B out to all users."
     },
     {
-      "file": "mutated/cohort-s12__selection-survivorship-cohort__m1.ipynb",
-      "base": "clean/cohort-s12.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s12__significance-meaningless__m1.ipynb",
+      "base": "clean/abtest-s12.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 0.002386637349583579,
+        "cohens_d": 0.030372565373671122,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Variant B beat A on the primary metric with p < 0.05. The result is statistically significant, so B should be shipped to 100% of traffic."
     },
     {
-      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/cohort-s13.ipynb",
+      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/cohort-s13.ipynb",
+      "file": "mutated/abtest-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s13__selection-survivorship-cohort__m0.ipynb",
-      "base": "clean/cohort-s13.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s13__significance-meaningless__m0.ipynb",
+      "base": "clean/abtest-s13.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 7.2984221853508654e-09,
+        "cohens_d": 0.05782905992435963,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Variant B beat A on the primary metric with p < 0.05. The result is statistically significant, so B should be shipped to 100% of traffic."
     },
     {
-      "file": "mutated/cohort-s13__selection-survivorship-cohort__m1.ipynb",
-      "base": "clean/cohort-s13.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s13__significance-meaningless__m1.ipynb",
+      "base": "clean/abtest-s13.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 7.2984221853508654e-09,
+        "cohens_d": 0.05782905992435963,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "The checkout redesign produced a statistically significant improvement in session time (p < 0.05). We recommend rolling variant B out to all users."
     },
     {
-      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m0.ipynb",
-      "base": "clean/cohort-s14.ipynb",
+      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/abtest-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m1.ipynb",
-      "base": "clean/cohort-s14.ipynb",
+      "file": "mutated/abtest-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/abtest-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "effective_tests": 10,
+        "effective_tests": 11,
         "correction_present": false
       }
     },
     {
-      "file": "mutated/cohort-s14__selection-survivorship-cohort__m0.ipynb",
-      "base": "clean/cohort-s14.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s14__significance-meaningless__m0.ipynb",
+      "base": "clean/abtest-s14.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 1.0176877686743398e-05,
+        "cohens_d": 0.044129803246680706,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "The checkout redesign produced a statistically significant improvement in session time (p < 0.05). We recommend rolling variant B out to all users."
     },
     {
-      "file": "mutated/cohort-s14__selection-survivorship-cohort__m1.ipynb",
-      "base": "clean/cohort-s14.ipynb",
-      "flaw_id": "selection-survivorship-cohort",
+      "file": "mutated/abtest-s14__significance-meaningless__m1.ipynb",
+      "base": "clean/abtest-s14.ipynb",
+      "flaw_id": "significance-meaningless",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
-        "population_claim": true,
-        "scoped_language": false
-      }
+        "p": 1.0176877686743398e-05,
+        "cohens_d": 0.044129803246680706,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Variant B beat A on the primary metric with p < 0.05. The result is statistically significant, so B should be shipped to 100% of traffic."
     },
     {
       "file": "mutated/fraud-s11__leakage-fit-before-split__m0.ipynb",
       "base": "clean/fraud-s11.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 3000,
@@ -515,6 +804,7 @@
       "base": "clean/fraud-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -526,6 +816,7 @@
       "base": "clean/fraud-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -537,6 +828,7 @@
       "base": "clean/fraud-s11.ipynb",
       "flaw_id": "baserate-accuracy-imbalanced",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "majority_baseline": 0.9,
@@ -548,6 +840,7 @@
       "base": "clean/fraud-s12.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 3000,
@@ -559,6 +852,7 @@
       "base": "clean/fraud-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -570,6 +864,7 @@
       "base": "clean/fraud-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -581,6 +876,7 @@
       "base": "clean/fraud-s12.ipynb",
       "flaw_id": "baserate-accuracy-imbalanced",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "majority_baseline": 0.9,
@@ -592,6 +888,7 @@
       "base": "clean/fraud-s13.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 3000,
@@ -603,6 +900,7 @@
       "base": "clean/fraud-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -614,6 +912,7 @@
       "base": "clean/fraud-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -625,6 +924,7 @@
       "base": "clean/fraud-s13.ipynb",
       "flaw_id": "baserate-accuracy-imbalanced",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "majority_baseline": 0.9,
@@ -636,6 +936,7 @@
       "base": "clean/fraud-s14.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 3000,
@@ -647,6 +948,7 @@
       "base": "clean/fraud-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -658,6 +960,7 @@
       "base": "clean/fraud-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -669,6 +972,7 @@
       "base": "clean/fraud-s14.ipynb",
       "flaw_id": "baserate-accuracy-imbalanced",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "majority_baseline": 0.9,
@@ -680,6 +984,7 @@
       "base": "clean/housing-s11.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1800,
@@ -691,6 +996,7 @@
       "base": "clean/housing-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -702,6 +1008,7 @@
       "base": "clean/housing-s11.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -713,6 +1020,7 @@
       "base": "clean/housing-s12.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1800,
@@ -724,6 +1032,7 @@
       "base": "clean/housing-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -735,6 +1044,7 @@
       "base": "clean/housing-s12.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -746,6 +1056,7 @@
       "base": "clean/housing-s13.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1800,
@@ -757,6 +1068,7 @@
       "base": "clean/housing-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -768,6 +1080,7 @@
       "base": "clean/housing-s13.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -779,6 +1092,7 @@
       "base": "clean/housing-s14.ipynb",
       "flaw_id": "leakage-fit-before-split",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "scaler_samples_seen": 1800,
@@ -790,6 +1104,7 @@
       "base": "clean/housing-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 0,
+      "split": "dev",
       "verified": true,
       "evidence": {
         "effective_tests": 10,
@@ -801,6 +1116,1431 @@
       "base": "clean/housing-s14.ipynb",
       "flaw_id": "testing-multiple-uncorrected",
       "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s11__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+    },
+    {
+      "file": "mutated/cohort-s11__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s11.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+    },
+    {
+      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s12__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+    },
+    {
+      "file": "mutated/cohort-s12__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s12.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+    },
+    {
+      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s13.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+    },
+    {
+      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s14__selection-survivorship-cohort__m0.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Average customer LTV grows steadily across signup cohorts \u2014 the product increases customer value over time."
+    },
+    {
+      "file": "mutated/cohort-s14__selection-survivorship-cohort__m1.ipynb",
+      "base": "clean/cohort-s14.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "LTV per cohort keeps climbing quarter over quarter: every new cohort of customers is worth more than the last."
+    },
+    {
+      "file": "mutated/program-s11__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/program-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s11__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/program-s11.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s12__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/program-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s12__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/program-s12.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s13__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/program-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s13__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/program-s13.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s14__testing-multiple-uncorrected__m0.ipynb",
+      "base": "clean/program-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s14__testing-multiple-uncorrected__m1.ipynb",
+      "base": "clean/program-s14.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s21__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/churn-s21.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/churn-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/churn-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s21__regression-to-mean-claim__m2.ipynb",
+      "base": "clean/churn-s21.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 21.19666666666667,
+        "selected_q2_mean": 34.031733333333335,
+        "grand_q1_mean": 51.442753333333336,
+        "grand_q2_mean": 51.06500666666666,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Did the stabilization program work? The numbers say yes \u2014 flagged accounts' spend moved back to normal in the following quarter, a change the program caused."
+    },
+    {
+      "file": "mutated/churn-s21__regression-to-mean-claim__m3.ipynb",
+      "base": "clean/churn-s21.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 25.5872,
+        "selected_q2_mean": 36.54860000000001,
+        "grand_q1_mean": 51.442753333333336,
+        "grand_q2_mean": 51.06500666666666,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "The outreach paid off: accounts singled out for atypical spending returned to ordinary levels once the program took hold, which shows the program drove the turnaround."
+    },
+    {
+      "file": "mutated/churn-s22__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/churn-s22.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/churn-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/churn-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s22__regression-to-mean-claim__m2.ipynb",
+      "base": "clean/churn-s22.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 19.471866666666664,
+        "selected_q2_mean": 35.73386666666666,
+        "grand_q1_mean": 51.9844,
+        "grand_q2_mean": 52.00337333333333,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "The outreach paid off: accounts singled out for atypical spending returned to ordinary levels once the program took hold, which shows the program drove the turnaround."
+    },
+    {
+      "file": "mutated/churn-s22__regression-to-mean-claim__m3.ipynb",
+      "base": "clean/churn-s22.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 24.826000000000004,
+        "selected_q2_mean": 38.12873333333333,
+        "grand_q1_mean": 51.9844,
+        "grand_q2_mean": 52.00337333333333,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Enrollment in the outreach scheme produced a marked normalization in the flagged accounts' spending \u2014 proof that the scheme changed spending behavior."
+    },
+    {
+      "file": "mutated/churn-s23__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/churn-s23.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/churn-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/churn-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s23__regression-to-mean-claim__m2.ipynb",
+      "base": "clean/churn-s23.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 21.560657894736842,
+        "selected_q2_mean": 36.7975,
+        "grand_q1_mean": 52.50552,
+        "grand_q2_mean": 52.02669333333334,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Enrollment in the outreach scheme produced a marked normalization in the flagged accounts' spending \u2014 proof that the scheme changed spending behavior."
+    },
+    {
+      "file": "mutated/churn-s23__regression-to-mean-claim__m3.ipynb",
+      "base": "clean/churn-s23.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 25.96093333333333,
+        "selected_q2_mean": 39.34333333333334,
+        "grand_q1_mean": 52.50552,
+        "grand_q2_mean": 52.02669333333334,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Did the stabilization program work? The numbers say yes \u2014 flagged accounts' spend moved back to normal in the following quarter, a change the program caused."
+    },
+    {
+      "file": "mutated/churn-s24__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/churn-s24.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1500,
+        "total_rows": 1500
+      }
+    },
+    {
+      "file": "mutated/churn-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/churn-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/churn-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/churn-s24__regression-to-mean-claim__m2.ipynb",
+      "base": "clean/churn-s24.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 20.036973684210526,
+        "selected_q2_mean": 38.541315789473686,
+        "grand_q1_mean": 51.65494,
+        "grand_q2_mean": 52.321360000000006,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "Did the stabilization program work? The numbers say yes \u2014 flagged accounts' spend moved back to normal in the following quarter, a change the program caused."
+    },
+    {
+      "file": "mutated/churn-s24__regression-to-mean-claim__m3.ipynb",
+      "base": "clean/churn-s24.ipynb",
+      "flaw_id": "regression-to-mean-claim",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "selected_q1_mean": 24.895266666666668,
+        "selected_q2_mean": 40.988666666666674,
+        "grand_q1_mean": 51.65494,
+        "grand_q2_mean": 52.321360000000006,
+        "causal_claim": true,
+        "control_language": false
+      },
+      "conclusion": "The outreach paid off: accounts singled out for atypical spending returned to ordinary levels once the program took hold, which shows the program drove the turnaround."
+    },
+    {
+      "file": "mutated/abtest-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/abtest-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/abtest-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s21__significance-meaningless__m2.ipynb",
+      "base": "clean/abtest-s21.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 2.2893662106772318e-07,
+        "cohens_d": 0.05173717409747959,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Did the redesign work? The statistics say yes: p < 0.05 on the primary metric. Roll variant B out to everyone."
+    },
+    {
+      "file": "mutated/abtest-s21__significance-meaningless__m3.ipynb",
+      "base": "clean/abtest-s21.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 2.2893662106772318e-07,
+        "cohens_d": 0.05173717409747959,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "With the p-value comfortably below the 0.05 threshold, the experiment is decisive: launch the new checkout for the entire user base."
+    },
+    {
+      "file": "mutated/abtest-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/abtest-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/abtest-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s22__significance-meaningless__m2.ipynb",
+      "base": "clean/abtest-s22.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 0.0011257834890729189,
+        "cohens_d": 0.032569048819186014,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "With the p-value comfortably below the 0.05 threshold, the experiment is decisive: launch the new checkout for the entire user base."
+    },
+    {
+      "file": "mutated/abtest-s22__significance-meaningless__m3.ipynb",
+      "base": "clean/abtest-s22.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 0.0011257834890729189,
+        "cohens_d": 0.032569048819186014,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Our significance test cleared the bar (p < 0.05), which settles it \u2014 the data supports adopting variant B as the default experience going forward."
+    },
+    {
+      "file": "mutated/abtest-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/abtest-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/abtest-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s23__significance-meaningless__m2.ipynb",
+      "base": "clean/abtest-s23.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 4.237234770038397e-06,
+        "cohens_d": 0.04598988846740186,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Our significance test cleared the bar (p < 0.05), which settles it \u2014 the data supports adopting variant B as the default experience going forward."
+    },
+    {
+      "file": "mutated/abtest-s23__significance-meaningless__m3.ipynb",
+      "base": "clean/abtest-s23.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 4.237234770038397e-06,
+        "cohens_d": 0.04598988846740186,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Did the redesign work? The statistics say yes: p < 0.05 on the primary metric. Roll variant B out to everyone."
+    },
+    {
+      "file": "mutated/abtest-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/abtest-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/abtest-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 11,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/abtest-s24__significance-meaningless__m2.ipynb",
+      "base": "clean/abtest-s24.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 0.0018323432579848142,
+        "cohens_d": 0.031160167314013918,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "Did the redesign work? The statistics say yes: p < 0.05 on the primary metric. Roll variant B out to everyone."
+    },
+    {
+      "file": "mutated/abtest-s24__significance-meaningless__m3.ipynb",
+      "base": "clean/abtest-s24.ipynb",
+      "flaw_id": "significance-meaningless",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "p": 0.0018323432579848142,
+        "cohens_d": 0.031160167314013918,
+        "effect_size_in_markdown": false,
+        "recommendation": true
+      },
+      "conclusion": "With the p-value comfortably below the 0.05 threshold, the experiment is decisive: launch the new checkout for the entire user base."
+    },
+    {
+      "file": "mutated/fraud-s21__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/fraud-s21.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/fraud-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/fraud-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s21__baserate-accuracy-imbalanced__m2.ipynb",
+      "base": "clean/fraud-s21.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/fraud-s22__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/fraud-s22.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/fraud-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/fraud-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s22__baserate-accuracy-imbalanced__m2.ipynb",
+      "base": "clean/fraud-s22.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/fraud-s23__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/fraud-s23.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/fraud-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/fraud-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s23__baserate-accuracy-imbalanced__m2.ipynb",
+      "base": "clean/fraud-s23.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/fraud-s24__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/fraud-s24.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 3000,
+        "total_rows": 3000
+      }
+    },
+    {
+      "file": "mutated/fraud-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/fraud-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/fraud-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/fraud-s24__baserate-accuracy-imbalanced__m2.ipynb",
+      "base": "clean/fraud-s24.ipynb",
+      "flaw_id": "baserate-accuracy-imbalanced",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "majority_baseline": 0.9,
+        "reported_accuracy": 0.9
+      }
+    },
+    {
+      "file": "mutated/housing-s21__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/housing-s21.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/housing-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/housing-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s22__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/housing-s22.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/housing-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/housing-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s23__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/housing-s23.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/housing-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/housing-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s24__leakage-fit-before-split__m2.ipynb",
+      "base": "clean/housing-s24.ipynb",
+      "flaw_id": "leakage-fit-before-split",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "scaler_samples_seen": 1800,
+        "total_rows": 1800
+      }
+    },
+    {
+      "file": "mutated/housing-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/housing-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/housing-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/housing-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/cohort-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/cohort-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s21__selection-survivorship-cohort__m2.ipynb",
+      "base": "clean/cohort-s21.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+    },
+    {
+      "file": "mutated/cohort-s21__selection-survivorship-cohort__m3.ipynb",
+      "base": "clean/cohort-s21.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+    },
+    {
+      "file": "mutated/cohort-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/cohort-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/cohort-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s22__selection-survivorship-cohort__m2.ipynb",
+      "base": "clean/cohort-s22.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+    },
+    {
+      "file": "mutated/cohort-s22__selection-survivorship-cohort__m3.ipynb",
+      "base": "clean/cohort-s22.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Each successive signup quarter delivers higher average LTV, so the business now extracts more value from all its customers."
+    },
+    {
+      "file": "mutated/cohort-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/cohort-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/cohort-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s23__selection-survivorship-cohort__m2.ipynb",
+      "base": "clean/cohort-s23.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Each successive signup quarter delivers higher average LTV, so the business now extracts more value from all its customers."
+    },
+    {
+      "file": "mutated/cohort-s23__selection-survivorship-cohort__m3.ipynb",
+      "base": "clean/cohort-s23.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+    },
+    {
+      "file": "mutated/cohort-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/cohort-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/cohort-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/cohort-s24__selection-survivorship-cohort__m2.ipynb",
+      "base": "clean/cohort-s24.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "Is customer value improving? The cohort table answers clearly: across the entire customer population, later signups are worth more."
+    },
+    {
+      "file": "mutated/cohort-s24__selection-survivorship-cohort__m3.ipynb",
+      "base": "clean/cohort-s24.ipynb",
+      "flaw_id": "selection-survivorship-cohort",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "population_claim": true,
+        "scoped_language": false
+      },
+      "conclusion": "The upward trend in cohort lifetime value means our customer base as a whole is becoming more valuable."
+    },
+    {
+      "file": "mutated/program-s21__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/program-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s21__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/program-s21.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s22__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/program-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s22__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/program-s22.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s23__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/program-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s23__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/program-s23.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s24__testing-multiple-uncorrected__m2.ipynb",
+      "base": "clean/program-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "effective_tests": 10,
+        "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/program-s24__testing-multiple-uncorrected__m3.ipynb",
+      "base": "clean/program-s24.ipynb",
+      "flaw_id": "testing-multiple-uncorrected",
+      "mutation_seed": 3,
+      "split": "heldout",
       "verified": true,
       "evidence": {
         "effective_tests": 10,

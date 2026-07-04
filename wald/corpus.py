@@ -1,4 +1,5 @@
-"""Corpus builder: 5 clean analysis families x N seeds, plus verified mutants.
+"""Corpus builder: 6 clean analysis families x dev + held-out seeds, plus
+verified mutants and seeded false flags (G3 substrate).
 
 Clean notebooks satisfy the clean-corpus criteria (see README): scoped
 claims, split-before-fit, corrected or <=3 tests, >=2 classification
@@ -6,6 +7,11 @@ metrics, imbalance stated, no extrapolation. They are executed at build
 time so stored outputs (value_counts etc.) are available as detector
 evidence. Synthetic by design in v1 — licensed real notebooks are a
 planned corpus extension, and the eval report says so.
+
+Every manifest entry carries a split: dev (base seeds 11-14, mutation
+seeds 0-1, phrasing variants 0-1) or heldout (fresh base seeds 21-24,
+mutation seeds 2-3, phrasing variants 2-4). Nothing held-out may be seen
+during prompt iteration (risk R3).
 """
 
 from __future__ import annotations
@@ -71,6 +77,7 @@ def churn_notebook(seed: int):
             '    "referrals": rng.poisson(0.6, n),\n'
             '    "cart_abandons": rng.poisson(2.1, n),\n'
             "})\n"
+            'df["monthly_spend_q2"] = (0.5 * df["monthly_spend"] + 26 + rng.normal(0, 13, n)).round(2)\n'
             'logit = (-0.05 * df["tenure_months"] - 0.4 * df["logins_per_week"]\n'
             '         + 0.03 * df["days_since_last_order"] + 0.35 * df["support_tickets"]\n'
             "         + rng.normal(0, 1.5, n))\n"
@@ -104,8 +111,9 @@ def churn_notebook(seed: int):
             "These results describe customers in this dataset only."),
     ]
     return _nb(cells, {
-        "family": "churn", "num_cols": CHURN_COLS,
+        "family": "churn", "seed": seed, "num_cols": CHURN_COLS,
         "binary_col": "churned", "binary_values": [1, 0],
+        "period_cols": ["monthly_spend", "monthly_spend_q2"],
         "imports_cell": 1, "split_cell": 5, "metrics_cell": 6,
         "conclusion_cell": 7, "imbalanced": False,
     })
@@ -161,9 +169,10 @@ def abtest_notebook(seed: int):
             "a corrected follow-up."),
     ]
     return _nb(cells, {
-        "family": "abtest", "num_cols": AB_COLS,
+        "family": "abtest", "seed": seed, "num_cols": AB_COLS,
         "binary_col": "variant", "binary_values": ["B", "A"],
-        "imports_cell": 1, "conclusion_cell": 4, "imbalanced": False,
+        "imports_cell": 1, "datagen_cell": 2, "conclusion_cell": 4,
+        "imbalanced": False,
     })
 
 
@@ -233,7 +242,7 @@ def fraud_notebook(seed: int):
             "quality is judged by AUC; accuracy is shown for context only."),
     ]
     return _nb(cells, {
-        "family": "fraud", "num_cols": FRAUD_COLS,
+        "family": "fraud", "seed": seed, "num_cols": FRAUD_COLS,
         "binary_col": "fraud", "binary_values": [1, 0],
         "imports_cell": 1, "split_cell": 5, "metrics_cell": 6,
         "conclusion_cell": 7, "imbalanced": True,
@@ -306,7 +315,7 @@ def housing_notebook(seed: int):
             "we make no claims about segments outside it."),
     ]
     return _nb(cells, {
-        "family": "housing", "num_cols": HOUSING_COLS,
+        "family": "housing", "seed": seed, "num_cols": HOUSING_COLS,
         "target_col": "price",
         "imports_cell": 1, "split_cell": 4, "metrics_cell": 5,
         "conclusion_cell": 6, "imbalanced": False,
@@ -366,11 +375,86 @@ def cohort_notebook(seed: int):
             "realized LTV, and must not be read as a population number."),
     ]
     return _nb(cells, {
-        "family": "cohort", "num_cols": COHORT_COLS,
+        "family": "cohort", "seed": seed, "num_cols": COHORT_COLS,
         "binary_col": "status", "binary_values": ["active", "churned"],
         "status_col": "status",
         "imports_cell": 1, "agg_cell": 3, "conclusion_cell": 5,
         "imbalanced": False,
+    })
+
+
+PROGRAM_COLS = [
+    "spend_q1", "logins_per_week", "support_tickets", "emails_opened",
+    "tenure_months", "pages_per_session", "referrals", "cart_abandons",
+]
+
+
+def program_notebook(seed: int):
+    cells = [
+        _md("# Retention program evaluation\n\n"
+            "Effect of the outreach program on extreme-spend accounts, "
+            "measured against an equally extreme control group; the churn "
+            "model is cross-validated with preprocessing inside the "
+            "pipeline."),
+        _code(
+            "import numpy as np\n"
+            "import pandas as pd\n"
+            "from sklearn.model_selection import cross_val_score\n"
+            "from sklearn.pipeline import Pipeline\n"
+            "from sklearn.preprocessing import StandardScaler\n"
+            "from sklearn.linear_model import LogisticRegression"
+        ),
+        _code(
+            f"rng = np.random.default_rng({seed})\n"
+            "n = 2000\n"
+            "df = pd.DataFrame({\n"
+            '    "spend_q1": rng.normal(48, 14, n).round(2),\n'
+            '    "logins_per_week": rng.gamma(2.5, 1.8, n).round(1),\n'
+            '    "support_tickets": rng.poisson(1.4, n),\n'
+            '    "emails_opened": rng.poisson(5, n),\n'
+            '    "tenure_months": rng.gamma(4, 6, n).round(1),\n'
+            '    "pages_per_session": rng.gamma(3, 1.2, n).round(1),\n'
+            '    "referrals": rng.poisson(0.6, n),\n'
+            '    "cart_abandons": rng.poisson(2.1, n),\n'
+            "})\n"
+            'df["spend_q2"] = (0.5 * df["spend_q1"] + 24 + rng.normal(0, 12, n)).round(2)\n'
+            'logit = (-0.06 * df["tenure_months"] - 0.35 * df["logins_per_week"]\n'
+            '         + 0.3 * df["support_tickets"] + rng.normal(0, 1.5, n))\n'
+            'df["churned"] = (logit > np.median(logit)).astype(int)'
+        ),
+        _code(
+            'low = df.nsmallest(300, "spend_q1")\n'
+            "enrolled = low.sample(150, random_state=0)\n"
+            "control = low.drop(enrolled.index)\n"
+            'print("enrolled q1->q2:", enrolled["spend_q1"].mean().round(1),\n'
+            '      "->", enrolled["spend_q2"].mean().round(1))\n'
+            'print("control  q1->q2:", control["spend_q1"].mean().round(1),\n'
+            '      "->", control["spend_q2"].mean().round(1))'
+        ),
+        _md("The enrolled accounts' spend recovered strongly in the second "
+            "quarter. So did the control group's — both groups were selected "
+            "for extreme values, and regression to the mean moves both back "
+            "toward the average. The program effect is the enrolled-minus-"
+            "control difference in that movement, which is close to zero "
+            "here."),
+        _code(
+            f"num_cols = {PROGRAM_COLS!r}\n"
+            "X = df[num_cols]\n"
+            'y = df["churned"]\n'
+            'pipe = Pipeline([("scaler", StandardScaler()),\n'
+            '                 ("model", LogisticRegression(max_iter=1000))])\n'
+            "scores = cross_val_score(pipe, X, y, cv=5)\n"
+            'print(f"cv accuracy: {scores.mean():.3f} +/- {scores.std():.3f}")'
+        ),
+        _md("Cross-validated accuracy estimates how the model will perform "
+            "on unseen customers. The scaler sits inside the pipeline, so it "
+            "is refit on each training fold and never sees that fold's test "
+            "rows."),
+    ]
+    return _nb(cells, {
+        "family": "program", "seed": seed, "num_cols": PROGRAM_COLS,
+        "binary_col": "churned", "binary_values": [1, 0],
+        "imports_cell": 1, "conclusion_cell": 6, "imbalanced": False,
     })
 
 
@@ -380,18 +464,25 @@ FAMILIES = {
     "fraud": fraud_notebook,
     "housing": housing_notebook,
     "cohort": cohort_notebook,
+    "program": program_notebook,
 }
 
-# which mutation seeds to run per flaw (variants with real randomness get 2)
+DEV_SEEDS = (11, 12, 13, 14)
+HELDOUT_SEEDS = (21, 22, 23, 24)
+
+# which mutation seeds to run per flaw and split; seeds 0-1 select dev
+# phrasing variants, 2-3 select held-out ones (see mutate.phrasing_variant)
 MUTATION_SEEDS = {
-    "leakage-fit-before-split": (0,),
-    "testing-multiple-uncorrected": (0, 1),
-    "baserate-accuracy-imbalanced": (0,),
-    "selection-survivorship-cohort": (0, 1),
+    "leakage-fit-before-split": {"dev": (0,), "heldout": (2,)},
+    "testing-multiple-uncorrected": {"dev": (0, 1), "heldout": (2, 3)},
+    "baserate-accuracy-imbalanced": {"dev": (0,), "heldout": (2,)},
+    "selection-survivorship-cohort": {"dev": (0, 1), "heldout": (2, 3)},
+    "significance-meaningless": {"dev": (0, 1), "heldout": (2, 3)},
+    "regression-to-mean-claim": {"dev": (0, 1), "heldout": (2, 3)},
 }
 
 
-def build_clean(root: Path, seeds=(11, 12, 13, 14), log=print) -> list[dict]:
+def build_clean(root: Path, seeds, split: str, log=print) -> list[dict]:
     clean_dir = root / "clean"
     clean_dir.mkdir(parents=True, exist_ok=True)
     entries = []
@@ -401,20 +492,22 @@ def build_clean(root: Path, seeds=(11, 12, 13, 14), log=print) -> list[dict]:
             log(f"clean: {name}")
             executed = ex.execute(builder(seed))
             nbformat.write(executed, str(clean_dir / name))
-            entries.append({"file": f"clean/{name}", "family": family, "seed": seed})
+            entries.append({"file": f"clean/{name}", "family": family,
+                            "seed": seed, "split": split})
     return entries
 
 
-def build_mutants(root: Path, log=print) -> tuple[list[dict], list[dict]]:
-    clean_dir, mut_dir = root / "clean", root / "mutated"
+def build_mutants(root: Path, clean_entries, log=print) -> tuple[list[dict], list[dict]]:
+    mut_dir = root / "mutated"
     mut_dir.mkdir(parents=True, exist_ok=True)
     entries, discarded = [], []
-    for path in sorted(clean_dir.glob("*.ipynb")):
+    for clean_entry in clean_entries:
+        path = root / clean_entry["file"]
         nb = nbformat.read(str(path), as_version=4)
         for mutation in MUTATIONS:
             if not mutation.applicable(nb):
                 continue
-            for seed in MUTATION_SEEDS[mutation.flaw_id]:
+            for seed in MUTATION_SEEDS[mutation.flaw_id][clean_entry["split"]]:
                 name = f"{path.stem}__{mutation.flaw_id}__m{seed}.ipynb"
                 log(f"mutant: {name}")
                 mutated = mutation.apply(nb, seed)
@@ -422,8 +515,12 @@ def build_mutants(root: Path, log=print) -> tuple[list[dict], list[dict]]:
                 record = {
                     "file": f"mutated/{name}", "base": f"clean/{path.name}",
                     "flaw_id": mutation.flaw_id, "mutation_seed": seed,
+                    "split": clean_entry["split"],
                     "verified": ok, "evidence": evidence,
                 }
+                concl = mutation.conclusion(nb, seed)
+                if concl is not None:
+                    record["conclusion"] = concl
                 if ok:
                     nbformat.write(mutated, str(mut_dir / name))
                     entries.append(record)
@@ -433,10 +530,93 @@ def build_mutants(root: Path, log=print) -> tuple[list[dict], list[dict]]:
     return entries, discarded
 
 
-def build_corpus(root: str | Path, seeds=(11, 12, 13, 14), log=print) -> dict:
+def build_negative_flags(root: str | Path, log=print) -> dict:
+    """Seeded FALSE flags (G3 substrate): each cites real spans of corpus
+    notebooks, and each recipe's falseness is mechanically checkable."""
     root = Path(root)
-    clean = build_clean(root, seeds, log=log)
-    mutants, discarded = build_mutants(root, log=log)
+    manifest = json.loads((root / "MANIFEST.json").read_text())
+    neg_dir = root / "negative"
+    neg_dir.mkdir(parents=True, exist_ok=True)
+
+    def entry(flaw_id, recipe, split, file, claim, code, why):
+        cells = nbformat.read(str(root / file), as_version=4).cells
+        for cell_idx, quote in (claim, code):
+            assert quote in cells[cell_idx]["source"], (file, cell_idx, quote)
+        return {
+            "flaw_id": flaw_id,
+            "claim_span": {"cell": claim[0], "quote": claim[1]},
+            "code_span": {"cell": code[0], "quote": code[1]},
+            "source_file": file, "recipe": recipe, "split": split,
+            "why_false": why,
+        }
+
+    flags = []
+    for c in manifest["clean"]:
+        if c["family"] == "cohort":
+            flags.append(entry(
+                "selection-survivorship-cohort", "scoped-claim", c["split"], c["file"],
+                (5, "it is higher by construction, because it excludes "
+                    "churned customers' lower realized LTV"),
+                (4, 'retained = df[df["status"] == "active"]'),
+                "the claim cell explicitly scopes the second table to "
+                "currently retained customers and reports the population "
+                "number separately",
+            ))
+        elif c["family"] == "abtest":
+            flags.append(entry(
+                "significance-meaningless", "effect-size-present", c["split"], c["file"],
+                (4, "we report the effect size alongside the p-value"),
+                (3, "stat, p = ttest_ind(a, b)"),
+                "the cited analysis computes Cohen's d and the conclusion "
+                "cell reports effect size alongside p",
+            ))
+        elif c["family"] == "program":
+            flags.append(entry(
+                "regression-to-mean-claim", "control-group-present", c["split"], c["file"],
+                (4, "The enrolled accounts' spend recovered strongly in the "
+                    "second quarter"),
+                (3, 'low = df.nsmallest(300, "spend_q1")'),
+                "an equally extreme control group is constructed in the "
+                "cited cell and the notebook attributes the movement to "
+                "regression to the mean",
+            ))
+            # reserved entirely for held-out G3: never tuned on (m2 plan §6)
+            flags.append(entry(
+                "leakage-fit-before-split", "legit-cv-generalization", "heldout", c["file"],
+                (6, "Cross-validated accuracy estimates how the model will "
+                    "perform on unseen customers"),
+                (5, "scores = cross_val_score(pipe, X, y, cv=5)"),
+                "the estimator is a Pipeline: the scaler is refit inside "
+                "each training fold and never sees that fold's test rows",
+            ))
+    for m in manifest["mutants"]:
+        if m["flaw_id"] != "selection-survivorship-cohort":
+            continue
+        cells = nbformat.read(str(root / m["file"]), as_version=4).cells
+        claim_cell = next(
+            i for i, c in enumerate(cells)
+            if c["cell_type"] == "markdown" and m["conclusion"] in c["source"]
+        )
+        flags.append(entry(
+            "selection-survivorship-cohort", "wrong-code-span", m["split"], m["file"],
+            (claim_cell, m["conclusion"]),
+            (1, "import numpy as np"),
+            "the cited code span is the imports cell and contains no cohort "
+            "filter; the evidence does not support the flag",
+        ))
+
+    neg_manifest = {"built": date.today().isoformat(), "flags": flags}
+    (neg_dir / "MANIFEST.json").write_text(json.dumps(neg_manifest, indent=2))
+    log(f"negative: {len(flags)} false flags across "
+        f"{len({f['recipe'] for f in flags})} recipes")
+    return neg_manifest
+
+
+def build_corpus(root: str | Path, seeds=DEV_SEEDS, heldout_seeds=HELDOUT_SEEDS, log=print) -> dict:
+    root = Path(root)
+    clean = (build_clean(root, seeds, "dev", log=log)
+             + build_clean(root, heldout_seeds, "heldout", log=log))
+    mutants, discarded = build_mutants(root, clean, log=log)
     manifest = {
         "built": date.today().isoformat(),
         "clean": clean,
@@ -447,4 +627,5 @@ def build_corpus(root: str | Path, seeds=(11, 12, 13, 14), log=print) -> dict:
     (root / "MANIFEST.json").write_text(json.dumps(manifest, indent=2))
     log(f"corpus: {len(clean)} clean, {len(mutants)} verified mutants, "
         f"{len(discarded)} discarded")
+    build_negative_flags(root, log=log)
     return manifest

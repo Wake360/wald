@@ -1,14 +1,40 @@
 """Mutation structure tests — apply() without kernel execution.
-Full verify() (execution fingerprints) is covered by corpus build + gate G0."""
+Full verify() (execution fingerprints) is covered by corpus build + gate G0,
+except the one execution-based verify test below that pins the three
+regression-to-mean selection idioms."""
 
-from wald.corpus import FAMILIES, churn_notebook, cohort_notebook, fraud_notebook
+import re
+
+import pytest
+
+from wald.corpus import (
+    FAMILIES,
+    abtest_notebook,
+    churn_notebook,
+    cohort_notebook,
+    fraud_notebook,
+    program_notebook,
+)
+from wald.detect import DEFAULT_CONFIDENCE_FLOOR, run_static
+from wald.ingest import from_nbnode
 from wald.mutate import (
     BaserateAccuracyMutation,
     FitBeforeSplitMutation,
     MultipleTestingMutation,
     MUTATIONS,
+    RegressionToMeanMutation,
+    SignificanceMeaninglessMutation,
     SurvivorshipMutation,
+    phrasing_variant,
 )
+
+
+def code_of(nb):
+    return "\n".join(c["source"] for c in nb.cells if c["cell_type"] == "code")
+
+
+def md_of(nb):
+    return "\n".join(c["source"] for c in nb.cells if c["cell_type"] == "markdown")
 
 
 def test_fit_before_split_reorders_statements():
@@ -29,7 +55,7 @@ def test_multiple_testing_inserts_uncorrected_loop():
     m = MultipleTestingMutation()
     assert m.applicable(clean)
     mutant = m.apply(clean, 0)
-    src = "\n".join(c["source"] for c in mutant.cells if c["cell_type"] == "code")
+    src = code_of(mutant)
     assert "ttest_ind" in src and "for c in cols_to_test" in src
     assert "multipletests" not in src
 
@@ -37,8 +63,8 @@ def test_multiple_testing_inserts_uncorrected_loop():
 def test_multiple_testing_seed_changes_columns():
     clean = churn_notebook(7)
     m = MultipleTestingMutation()
-    s0 = "\n".join(c["source"] for c in m.apply(clean, 0).cells if c["cell_type"] == "code")
-    s1 = "\n".join(c["source"] for c in m.apply(clean, 1).cells if c["cell_type"] == "code")
+    s0 = code_of(m.apply(clean, 0))
+    s1 = code_of(m.apply(clean, 1))
     assert s0 != s1
 
 
@@ -47,7 +73,7 @@ def test_baserate_strips_all_auc_mentions():
     m = BaserateAccuracyMutation()
     assert m.applicable(clean)
     mutant = m.apply(clean, 0)
-    src = "\n".join(c["source"] for c in mutant.cells if c["cell_type"] == "code")
+    src = code_of(mutant)
     assert "roc_auc" not in src and "predict_proba" not in src
     assert "accuracy_score" in src
 
@@ -56,16 +82,82 @@ def test_baserate_not_applicable_on_balanced_family():
     assert not BaserateAccuracyMutation().applicable(churn_notebook(7))
 
 
-def test_survivorship_filter_and_population_claim():
+def test_phrasing_variant_split_partition():
+    dev = {phrasing_variant(s, b) for s in (0, 1) for b in range(30)}
+    heldout = {phrasing_variant(s, b) for s in (2, 3) for b in range(30)}
+    assert dev == {0, 1}
+    assert heldout == {2, 3, 4}
+
+
+def test_survivorship_filter_idioms_and_phrasing_pool():
     clean = cohort_notebook(7)
     m = SurvivorshipMutation()
     assert m.applicable(clean)
-    for seed in (0, 1):
+    for seed in (0, 1, 2, 3):
         mutant = m.apply(clean, seed)
-        src = "\n".join(c["source"] for c in mutant.cells if c["cell_type"] == "code")
-        assert 'df = df[df["status"] == "active"]' in src
-        md = "\n".join(c["source"] for c in mutant.cells if c["cell_type"] == "markdown")
-        assert "customer value over time" in md
+        assert m.FILTERS[seed % 2] in code_of(mutant)
+        md = md_of(mutant)
+        assert m.conclusion(clean, seed) in md
+        assert not re.search(r"active|retained|surviv|complet", md, re.IGNORECASE)
+
+
+def test_significance_inflates_n_and_keeps_effect_size_in_code():
+    clean = abtest_notebook(7)
+    m = SignificanceMeaninglessMutation()
+    assert m.applicable(clean)
+    for seed in (0, 2):
+        mutant = m.apply(clean, seed)
+        datagen = mutant.cells[2]["source"]
+        assert "n = 40000" in datagen and "* 0.17" in datagen
+        assert "pooled_sd" in code_of(mutant)  # d stays; the prose ignores it
+        md = md_of(mutant)
+        assert m.conclusion(clean, seed) in md
+        assert "effect size" not in md.lower()
+
+
+def test_regression_to_mean_varies_selection_and_has_no_control():
+    clean = churn_notebook(7)
+    m = RegressionToMeanMutation()
+    assert m.applicable(clean)
+    assert not m.applicable(abtest_notebook(7))
+    selectors = set()
+    for seed in (0, 1, 2):
+        mutant = m.apply(clean, seed)
+        src = code_of(mutant)
+        selectors |= {s for s in ("nsmallest", "nlargest", "quantile") if s in src}
+        assert "control" not in src.lower()
+        md = md_of(mutant)
+        assert m.conclusion(clean, seed) in md
+        assert re.search(r"caused|effect of|drove|produced|worked", md, re.IGNORECASE)
+        assert not re.search(r"control|comparison group", md, re.IGNORECASE)
+    assert selectors == {"nsmallest", "nlargest", "quantile"}
+
+
+@pytest.mark.parametrize("seed,selector", [
+    (0, "nsmallest"), (1, "nlargest"), (2, "quantile"),
+])
+def test_regression_to_mean_verify_each_selection_idiom(seed, selector):
+    # seed % 3 picks the selection idiom; execute apply()+verify() so each
+    # of the three branches is actually run and its fingerprint asserted
+    clean = churn_notebook(7)
+    m = RegressionToMeanMutation()
+    mutant = m.apply(clean, seed)
+    assert selector in code_of(mutant)
+    ok, evidence = m.verify(mutant)
+    assert ok, evidence
+    assert evidence["causal_claim"] and not evidence["control_language"]
+
+
+def test_churn_second_period_column_is_static_silent():
+    clean = churn_notebook(7)
+    assert "monthly_spend_q2" in clean.cells[2]["source"]
+    flags = run_static(from_nbnode(clean))
+    assert [f for f in flags if f.confidence >= DEFAULT_CONFIDENCE_FLOOR] == []
+
+
+def test_program_family_is_static_silent():
+    flags = run_static(from_nbnode(program_notebook(7)))
+    assert [f for f in flags if f.confidence >= DEFAULT_CONFIDENCE_FLOOR] == []
 
 
 def test_every_family_has_at_least_one_applicable_mutation():
