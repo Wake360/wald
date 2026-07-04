@@ -9,7 +9,7 @@ import pytest
 
 from wald.corpus import MUTATION_SEEDS
 from wald.detect import run_static
-from wald.eval import evaluate
+from wald.eval import evaluate, render_report
 from wald.ingest import parse_notebook
 
 CORPUS = Path(__file__).parent.parent / "corpus"
@@ -100,12 +100,62 @@ def test_g0_negative_recipes_size_and_split():
         "wrong-code-span", "legit-cv-generalization",
     }
     for recipe, fs in by_recipe.items():
-        assert len(fs) >= 6, recipe
         splits = {f["split"] for f in fs}
         if recipe == "legit-cv-generalization":
-            assert splits == {"heldout"}  # reserved: never tuned on
+            # reserved: never tuned on — cites only the 4 held-out program nbs
+            assert len(fs) >= 4, recipe
+            assert splits == {"heldout"}
         else:
+            assert len(fs) >= 6, recipe
             assert splits == {"dev", "heldout"}, recipe
+
+
+def test_g0_legit_cv_flags_cite_only_heldout_notebooks():
+    # regression: the reserved held-out recipe must never cite a dev notebook,
+    # or a prompt tuned on that dev file would pass a "held-out" G3 check
+    split_of = {e["file"]: e["split"] for e in manifest()["clean"]}
+    legit = [f for f in negative_manifest()["flags"]
+             if f["recipe"] == "legit-cv-generalization"]
+    assert legit
+    for f in legit:
+        assert f["split"] == "heldout", f
+        assert split_of.get(f["source_file"]) == "heldout", f
+
+
+def test_g0_significance_mutant_outputs_reflect_mutated_code():
+    # regression: mutants are re-executed before writing, so the ttest cell's
+    # stored p-value is from the inflated n=40000 run (p<0.05), not a stale
+    # clean-run p that would contradict the significance-meaningless label
+    sig = [e for e in manifest()["mutants"]
+           if e["flaw_id"] == "significance-meaningless"]
+    assert sig
+    for e in sig:
+        nb = nbformat.read(str(CORPUS / e["file"]), as_version=4)
+        code = [c for c in nb.cells if c["cell_type"] == "code"]
+        assert any("n = 40000" in c["source"] for c in code), e["file"]
+        out_text = "\n".join(
+            o.get("text", "") for c in code
+            for o in c.get("outputs", []) if o.get("output_type") == "stream"
+        )
+        pm = re.search(r"p=([0-9.]+)", out_text)
+        assert pm, (e["file"], out_text)
+        assert float(pm.group(1)) < 0.05, (e["file"], pm.group(1))
+
+
+def test_g1_narrative_only_mutants_are_accounted():
+    # regression: narrative-layer-only mutants are out of static-recall scope
+    # but must be counted, not silently dropped from the headline total
+    results = evaluate(CORPUS)
+    static_measured = sum(r["tp"] + r["fn"] for r in results["static_classes"].values())
+    cand = results["candidate_classes"]["selection-survivorship-cohort"]
+    candidate_measured = cand["tp"] + cand["fn"]
+    total = static_measured + candidate_measured + results["n_mutants_narrative_only"]
+    assert total == results["n_mutants"], (
+        static_measured, candidate_measured,
+        results["n_mutants_narrative_only"], results["n_mutants"])
+    assert set(results["narrative_only_classes"]) == {
+        "regression-to-mean-claim", "significance-meaningless"}
+    assert "Narrative-layer-only mutants" in render_report(results)
 
 
 def test_g0_negative_quotes_are_verbatim_spans():

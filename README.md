@@ -14,9 +14,9 @@ returning planes. The tool's mentality is his: don't ask what the data says —
 ask what data is missing and what that does to the conclusion.
 
 ```
-$ wald check churn_analysis.ipynb
+$ wald check examples/leaky.ipynb
 
-# Wald report — churn_analysis.ipynb
+# Wald report — examples/leaky.ipynb
 verdict: 1 high, 0 medium | static layer (no LLM)
 
 ## HIGH: leakage-fit-before-split
@@ -24,6 +24,8 @@ verdict: 1 high, 0 medium | static layer (no LLM)
 - **Evidence:** `scaler.fit_transform(...)` consumes ['X'], which feed
   `train_test_split` (cell 5); the transformer is fitted on data containing
   the test set
+- **Why it matters:** A transformation (scaler, imputer, encoder, feature
+  selector, PCA, vectorizer) is fitted on data that contains the test set.
 - **Failure scenario:** Test metrics are inflated; the production model will
   underperform the reported numbers.
 - **Fix:** Fit the transformer on the training split only; apply transform
@@ -135,14 +137,18 @@ documentation and detector cannot drift.
 ## Install & use
 
 ```bash
-pip install -e .[corpus,dev]
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[corpus,dev]"       # or: uv sync --all-extras
 
-wald check notebook.ipynb            # markdown report, exit code 0/1/2
-wald check notebook.ipynb --format json
+wald check examples/leaky.ipynb      # exit 0 clean / 1 medium / 2 high / 3 input error
+wald check examples/leaky.ipynb --format json   # one object; a JSON array for multiple notebooks
 wald corpus build                    # build clean corpus + verified mutants
 wald eval                            # confusion matrix -> evals/<date>-eval.md
 pytest                               # unit tests + golden gates G0/G1
 ```
+
+`examples/leaky.ipynb` ships in the repo and reproduces the report shown
+at the top of this file.
 
 Wald never executes *your* notebook (static analysis + stored outputs
 only). Only self-authored corpus notebooks are executed, at corpus build

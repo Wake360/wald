@@ -196,6 +196,18 @@ def package_notebook(nb: ParsedNotebook, max_chars: int = 48_000) -> str:
     return "\n".join(b for _, b in blocks)
 
 
+def _sanitize_markdown(text: str) -> str:
+    """Neutralize model free-text before it is interpolated into the markdown
+    report. Collapsing to one line stops an injected line from opening a new
+    heading / code fence / list item; escaping backticks and brackets defangs
+    inline code spans, fences, and links. Report structure stays the model's
+    to describe, never to forge."""
+    text = " ".join(text.split())
+    for ch in ("`", "[", "]"):
+        text = text.replace(ch, "\\" + ch)
+    return text
+
+
 def _norm(s: str) -> str:
     for variant, plain in _TYPO_FOLD.items():
         s = s.replace(variant, plain)
@@ -309,8 +321,8 @@ def _ground_finding(raw, nb, enabled, taxonomy, dropped):
         code_line_start=span[0],
         code_line_end=span[1],
         code_quote=code_quote,
-        failure_scenario=str(raw.get("failure_scenario", d.failure_scenario)),
-        fix=str(raw.get("fix", d.fix)),
+        failure_scenario=_sanitize_markdown(str(raw.get("failure_scenario", d.failure_scenario))),
+        fix=_sanitize_markdown(str(raw.get("fix", d.fix))),
         model_confidence=conf,
     )
 

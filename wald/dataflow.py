@@ -22,6 +22,12 @@ from .ingest import ParsedNotebook
 # continuation) or "!= x"
 _MAGIC_RE = re.compile(r"^(%%?[A-Za-z]|![A-Za-z./~])")
 
+# line magics that wrap a statement: the payload is real code and must stay
+# visible to dataflow (`%time X = fit(...)` must not vanish). Payloads that
+# start with an option flag or another magic are not plain Python: fall back
+# to the pass replacement.
+_WRAPPER_MAGIC_RE = re.compile(r"^%%?(?:time|timeit|prun)\s+(?![-%!])(.+)$")
+
 # cell magics whose body is not Python; anything else that fails to parse
 # is a real parse error and must be recorded
 _NON_PYTHON_CELL_MAGICS = {
@@ -73,6 +79,11 @@ def _dotted(node: cst.BaseExpression) -> str | None:
     if isinstance(node, cst.Subscript):
         base = _dotted(node.value)
         return f"{base}[{_subscript_key(node)}]" if base else None
+    if isinstance(node, cst.Call):
+        # constructor-chained receiver: StandardScaler().fit_transform(X)
+        # must still yield a CallSite (receiver "StandardScaler()")
+        base = _dotted(node.func)
+        return f"{base}()" if base else None
     return None
 
 
@@ -86,6 +97,7 @@ class CallSite:
     loop_depth: int
     pos_args: list[set[str]] = field(default_factory=list)  # names per positional arg
     kw_args: dict[str, set[str]] = field(default_factory=dict)  # names per keyword arg
+    loop_vars: set[str] = field(default_factory=set)  # targets of enclosing for-loops
 
     @property
     def arg_names(self) -> set[str]:
@@ -118,15 +130,18 @@ class _CellVisitor(cst.CSTVisitor):
         self.calls: list[CallSite] = []
         self.assigns: list[AssignEvent] = []
         self._pending: dict[int, AssignEvent] = {}  # id(call node) -> its assign event
+        self._loop_vars: list[set[str]] = []  # target names per enclosing for-loop
 
     def _line(self, node: cst.CSTNode) -> int:
         return self.get_metadata(PositionProvider, node).start.line
 
     def visit_For(self, node: cst.For) -> None:
         self.loop_depth += 1
+        self._loop_vars.append(_target_names(node.target))
 
     def leave_For(self, node: cst.For) -> None:
         self.loop_depth -= 1
+        self._loop_vars.pop()
 
     def visit_While(self, node: cst.While) -> None:
         self.loop_depth += 1
@@ -176,6 +191,7 @@ class _CellVisitor(cst.CSTVisitor):
             loop_depth=self.loop_depth,
             pos_args=pos_args,
             kw_args=kw_args,
+            loop_vars=set().union(set(), *self._loop_vars),
         )
 
     def visit_Call(self, node: cst.Call) -> None:
@@ -238,7 +254,12 @@ def _strip_magics(source: str) -> str:
     for line in source.splitlines():
         stripped = line.lstrip()
         if _MAGIC_RE.match(stripped):
-            lines.append(line[: len(line) - len(stripped)] + "pass  # magic stripped")
+            indent = line[: len(line) - len(stripped)]
+            wrapper = _WRAPPER_MAGIC_RE.match(stripped)
+            if wrapper:
+                lines.append(indent + wrapper.group(1))
+            else:
+                lines.append(indent + "pass  # magic stripped")
         else:
             lines.append(line)
     return "\n".join(lines)

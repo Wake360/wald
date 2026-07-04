@@ -164,3 +164,39 @@ def test_every_family_has_at_least_one_applicable_mutation():
     for family, builder in FAMILIES.items():
         clean = builder(7)
         assert any(m.applicable(clean) for m in MUTATIONS), family
+
+
+def test_normalize_strips_execution_and_is_serialization_stable():
+    # T15: deterministic cell ids + no transient execution timestamps, so a
+    # second build of an unchanged notebook is byte-identical
+    import nbformat
+
+    from wald.corpus import _normalize
+
+    nb = churn_notebook(7)
+    nb.cells[1]["metadata"]["execution"] = {"iopub.status.busy": "2026-01-01T00:00:00Z"}
+    _normalize(nb, "churn-s7")
+    assert nb.cells[1]["id"] == "churn-s7-1"
+    assert "execution" not in nb.cells[1]["metadata"]
+    other = _normalize(churn_notebook(7), "churn-s7")  # fresh random ids pre-normalize
+    assert nbformat.writes(nb) == nbformat.writes(other)
+
+
+def test_render_report_survives_zero_clean_notebooks():
+    from wald.eval import render_report
+
+    results = {
+        "date": "2026-01-01", "corpus_built": "2026-01-01",
+        "n_clean": 0, "n_clean_real": 0, "n_mutants": 1, "n_discarded": 0,
+        "confidence_floor": 0.8, "static_classes": {}, "candidate_classes": {},
+        "clean_fp_rate": None, "clean_fp_files": [], "missed_mutants": [],
+    }
+    out = render_report(results)  # must not raise on None clean_fp_rate
+    assert "no clean notebooks" in out
+
+
+def test_evaluate_missing_corpus_raises_systemexit(tmp_path):
+    from wald.eval import evaluate
+
+    with pytest.raises(SystemExit):
+        evaluate(tmp_path / "nonexistent-corpus")

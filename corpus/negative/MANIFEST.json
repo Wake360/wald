@@ -1,5 +1,5 @@
 {
-  "built": "2026-07-04",
+  "built": "2026-07-05",
   "flags": [
     {
       "flaw_id": "significance-meaningless",
@@ -137,21 +137,6 @@
       "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
     },
     {
-      "flaw_id": "leakage-fit-before-split",
-      "claim_span": {
-        "cell": 6,
-        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
-      },
-      "code_span": {
-        "cell": 5,
-        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
-      },
-      "source_file": "clean/program-s11.ipynb",
-      "recipe": "legit-cv-generalization",
-      "split": "heldout",
-      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
-    },
-    {
       "flaw_id": "regression-to-mean-claim",
       "claim_span": {
         "cell": 4,
@@ -165,21 +150,6 @@
       "recipe": "control-group-present",
       "split": "dev",
       "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
-    },
-    {
-      "flaw_id": "leakage-fit-before-split",
-      "claim_span": {
-        "cell": 6,
-        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
-      },
-      "code_span": {
-        "cell": 5,
-        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
-      },
-      "source_file": "clean/program-s12.ipynb",
-      "recipe": "legit-cv-generalization",
-      "split": "heldout",
-      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
     },
     {
       "flaw_id": "regression-to-mean-claim",
@@ -197,21 +167,6 @@
       "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
     },
     {
-      "flaw_id": "leakage-fit-before-split",
-      "claim_span": {
-        "cell": 6,
-        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
-      },
-      "code_span": {
-        "cell": 5,
-        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
-      },
-      "source_file": "clean/program-s13.ipynb",
-      "recipe": "legit-cv-generalization",
-      "split": "heldout",
-      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
-    },
-    {
       "flaw_id": "regression-to-mean-claim",
       "claim_span": {
         "cell": 4,
@@ -225,21 +180,6 @@
       "recipe": "control-group-present",
       "split": "dev",
       "why_false": "an equally extreme control group is constructed in the cited cell and the notebook attributes the movement to regression to the mean"
-    },
-    {
-      "flaw_id": "leakage-fit-before-split",
-      "claim_span": {
-        "cell": 6,
-        "quote": "Cross-validated accuracy estimates how the model will perform on unseen customers"
-      },
-      "code_span": {
-        "cell": 5,
-        "quote": "scores = cross_val_score(pipe, X, y, cv=5)"
-      },
-      "source_file": "clean/program-s14.ipynb",
-      "recipe": "legit-cv-generalization",
-      "split": "heldout",
-      "why_false": "the estimator is a Pipeline: the scaler is refit inside each training fold and never sees that fold's test rows"
     },
     {
       "flaw_id": "significance-meaningless",

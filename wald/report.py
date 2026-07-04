@@ -19,6 +19,8 @@ def exit_code(flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
     if not confident:
         return 0
     worst = max(SEVERITY_ORDER[f.severity] for f in confident)
+    if worst == 0:
+        return 0  # info-severity only: below the medium gate, still a clean pass
     return 2 if worst >= SEVERITY_ORDER[severity_gate] else 1
 
 
@@ -30,20 +32,33 @@ def checked_classes(flags: list[Flag], floor: float) -> list[str]:
     return sorted(STATIC_DECIDABLE - flagged)
 
 
-def to_json(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR) -> str:
-    return json.dumps(
-        {
-            "notebook": path,
-            "flags": [asdict(f) for f in flags if f.confidence >= floor],
-            "candidates": [asdict(f) for f in flags if f.confidence < floor],
-            "clean_classes": checked_classes(flags, floor),
-            "exit_code": exit_code(flags, floor),
-        },
-        indent=2,
-    )
+def parse_warning(n_failed: int, n_total: int) -> str | None:
+    """Header/field warning when some code cells were unparseable, so a
+    notebook whose cells all failed to parse cannot read as a clean pass."""
+    if n_failed <= 0:
+        return None
+    return f"warning: {n_failed} of {n_total} code cells could not be parsed; results are partial"
 
 
-def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR) -> str:
+def report_obj(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
+               severity_gate: str = "high", warning: str | None = None) -> dict:
+    return {
+        "notebook": path,
+        "flags": [asdict(f) for f in flags if f.confidence >= floor],
+        "candidates": [asdict(f) for f in flags if f.confidence < floor],
+        "clean_classes": checked_classes(flags, floor),
+        "parse_warning": warning,
+        "exit_code": exit_code(flags, floor, severity_gate),
+    }
+
+
+def to_json(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
+            severity_gate: str = "high", warning: str | None = None) -> str:
+    return json.dumps(report_obj(path, flags, floor, severity_gate, warning), indent=2)
+
+
+def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
+                warning: str | None = None) -> str:
     taxonomy = load_taxonomy()
     confident = sorted(
         (f for f in flags if f.confidence >= floor),
@@ -55,6 +70,8 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
     n_high = sum(1 for f in confident if f.severity == "high")
     n_med = sum(1 for f in confident if f.severity == "medium")
     lines.append(f"verdict: {n_high} high, {n_med} medium | static layer (no LLM)")
+    if warning:
+        lines.append(warning)
     lines.append("")
 
     for f in confident:

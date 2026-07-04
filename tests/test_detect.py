@@ -65,14 +65,54 @@ def test_multiple_testing_silent_on_few_tests():
     assert "testing-multiple-uncorrected" not in flag_ids(notebook)
 
 
+def test_multiple_testing_not_suppressed_by_stockholm():
+    # 'stockholm' contains 'holm'; a word-boundary match must not read it as a correction
+    tests = "\n".join(f"s{i}, p{i} = ttest_ind(stockholm_df[a{i}], stockholm_df[b{i}])" for i in range(6))
+    notebook = nb([("code", "stockholm_df = load('stockholm.csv')"), ("code", tests)])
+    assert "testing-multiple-uncorrected" in flag_ids(notebook)
+
+
+def test_multiple_testing_not_suppressed_by_fdr_named_variable():
+    tests = "\n".join(f"s{i}, p{i} = ttest_ind(a{i}, b{i})" for i in range(6))
+    notebook = nb([("code", "fdr_level = 0.1"), ("code", tests)])
+    assert "testing-multiple-uncorrected" in flag_ids(notebook)
+
+
+def test_multiple_testing_loop_evidence_not_fabricated():
+    # one site parameterized by the loop var: confident, but no invented count
+    notebook = nb([
+        ("code", "from scipy.stats import ttest_ind"),
+        ("code", "for c in cols:\n    s, p = ttest_ind(a[c], b[c])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "testing-multiple-uncorrected"]
+    assert flags and flags[0].confidence == 0.9
+    assert flags[0].extra["n_tests"] == 1 and "fwer" not in flags[0].extra
+    assert "iteration count not statically known" in flags[0].evidence
+    assert ">= 10" not in flags[0].evidence
+
+
+def test_multiple_testing_resampling_loop_is_candidate():
+    # permutation loop: loop var never reaches the test args — one hypothesis
+    notebook = nb([
+        ("code", "from scipy.stats import ttest_ind"),
+        ("code", "for i in range(1000):\n    t, p = ttest_ind(a[perm[:m]], a[perm[m:]])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "testing-multiple-uncorrected"]
+    assert flags and all(f.confidence < 0.8 for f in flags)
+
+
 VC_IMBALANCED = "0    0.90\n1    0.10\nName: proportion, dtype: float64"
 VC_BALANCED = "0    0.52\n1    0.48\nName: proportion, dtype: float64"
+
+
+SPLIT_ON_Y = 'X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df["y"])'
 
 
 def test_baserate_flagged_accuracy_only_imbalanced():
     notebook = nb(
         [
             ("code", 'df["y"].value_counts(normalize=True)'),
+            ("code", SPLIT_ON_Y),
             ("code", "acc = accuracy_score(y_te, pred)"),
         ],
         outputs={0: VC_IMBALANCED},
@@ -84,6 +124,7 @@ def test_baserate_silent_when_auc_present():
     notebook = nb(
         [
             ("code", 'df["y"].value_counts(normalize=True)'),
+            ("code", SPLIT_ON_Y),
             ("code", "acc = accuracy_score(y_te, pred)\nauc = roc_auc_score(y_te, proba)"),
         ],
         outputs={0: VC_IMBALANCED},
@@ -95,11 +136,51 @@ def test_baserate_silent_on_balanced_classes():
     notebook = nb(
         [
             ("code", 'df["y"].value_counts(normalize=True)'),
+            ("code", SPLIT_ON_Y),
             ("code", "acc = accuracy_score(y_te, pred)"),
         ],
         outputs={0: VC_BALANCED},
     )
     assert "baserate-accuracy-imbalanced" not in flag_ids(notebook)
+
+
+def test_baserate_unlinked_skewed_feature_not_confident():
+    # a 90/10 feature (gender) must not certify the target as imbalanced
+    notebook = nb(
+        [
+            ("code", 'df["gender"].value_counts(normalize=True)'),
+            ("code", SPLIT_ON_Y),
+            ("code", "acc = accuracy_score(y_te, pred)"),
+        ],
+        outputs={0: VC_IMBALANCED},
+    )
+    flags = [f for f in run_static(notebook) if f.flaw_id == "baserate-accuracy-imbalanced"]
+    assert flags and all(f.confidence < 0.8 for f in flags)
+
+
+def test_baserate_balanced_feature_does_not_mask_imbalanced_target():
+    notebook = nb(
+        [
+            ("code", 'df["gender"].value_counts(normalize=True)'),
+            ("code", 'df["y"].value_counts(normalize=True)'),
+            ("code", SPLIT_ON_Y),
+            ("code", "acc = accuracy_score(y_te, pred)"),
+        ],
+        outputs={0: VC_BALANCED, 1: VC_IMBALANCED},
+    )
+    assert "baserate-accuracy-imbalanced" in flag_ids(notebook)
+
+
+def test_baserate_plain_name_receiver_links_via_dataflow():
+    notebook = nb(
+        [
+            ("code", 'y = df["target"]\ny.value_counts(normalize=True)'),
+            ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+            ("code", "acc = accuracy_score(y_te, pred)"),
+        ],
+        outputs={0: VC_IMBALANCED},
+    )
+    assert "baserate-accuracy-imbalanced" in flag_ids(notebook)
 
 
 def test_baserate_candidate_without_balance_evidence():
@@ -127,6 +208,34 @@ def test_survivorship_candidate_flagged_on_query_idiom():
     flags = run_static(notebook)
     match = [f for f in flags if f.flaw_id == "selection-survivorship-cohort"]
     assert match and match[0].confidence < 0.8
+
+
+def test_survivorship_flagged_on_chained_query():
+    notebook = nb([
+        ("code", "df = df.query(\"cohort == '2023'\").query(\"status == 'active'\")"),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"]
+    assert flags and flags[0].extra["column"] == "status"
+
+
+def test_survivorship_flagged_on_backtick_column():
+    notebook = nb([
+        ("code", 'df = df.query("`is_active` == 1")'),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"]
+    assert flags and flags[0].extra["column"] == "is_active"
+
+
+def test_survivorship_fstring_query_skipped_silently():
+    notebook = nb([
+        ("code", "df = df.query(f\"status == '{val}'\")"),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    assert not [
+        f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"
+    ]
 
 
 def test_survivorship_silent_on_query_non_risk_column():
@@ -319,6 +428,42 @@ def test_leakage_imputation_one_flag_per_frame_across_cells():
     ])
     flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
     assert len(flags) == 1
+
+
+def test_leakage_flagged_one_line_constructor_fit():
+    # the canonical one-liner: constructor-chained fit_transform on full data
+    notebook = nb([
+        ("code", "X = StandardScaler().fit_transform(X)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_silent_one_line_constructor_on_train_only():
+    notebook = nb([
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+        ("code", "X_tr = StandardScaler().fit_transform(X_tr)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_silent_on_one_line_label_encoder():
+    notebook = nb([
+        ("code", "y = LabelEncoder().fit_transform(y)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_factory_fit_stays_conservative():
+    # clone()/make_pipeline() receivers resolve to the factory name, which is
+    # not a known transformer class: a bare .fit must not flag
+    notebook = nb([
+        ("code", "clone(scaler).fit(X)"),
+        ("code", "make_pipeline(StandardScaler(), clf).fit(X, y)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
 
 
 def test_leakage_cv_groups_kwarg_not_a_data_seed():

@@ -19,7 +19,12 @@ from .taxonomy import load_taxonomy
 def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR,
              flags_producer=run_static) -> dict:
     root = Path(corpus_root)
-    manifest = json.loads((root / "MANIFEST.json").read_text())
+    manifest_path = root / "MANIFEST.json"
+    if not manifest_path.exists():
+        raise SystemExit(
+            f"corpus not found: {manifest_path} (run: wald corpus build --root {root})"
+        )
+    manifest = json.loads(manifest_path.read_text())
     # reviewed real notebooks (corpus/real) join the clean set; wald corpus
     # build regenerates only the synthetic MANIFEST, so they live separately
     real_manifest = root / "real" / "MANIFEST.json"
@@ -33,6 +38,11 @@ def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR,
     candidate = {"selection-survivorship-cohort": {"tp": 0, "fn": 0}}
     clean_fp_files = []
     misses = []
+    # mutants whose flaw is narrative-layer-only: the static layer cannot
+    # decide them (measured by `wald eval --llm`), but they are still checked
+    # below for spurious confident static flags, and counted here so the
+    # report reconciles with the headline mutant total instead of dropping them
+    narrative_only = {}
 
     for entry in manifest["clean"]:
         flags = flags_producer(parse_notebook(root / entry["file"]))
@@ -55,6 +65,8 @@ def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR,
             candidate[label]["tp" if hit else "fn"] += 1
             if not hit:
                 misses.append(entry["file"])
+        else:
+            narrative_only[label] = narrative_only.get(label, 0) + 1
         # spurious confident flags of OTHER static classes on a mutant = FP
         for f in flags:
             if f.flaw_id in STATIC_DECIDABLE and f.flaw_id != label and f.confidence >= floor:
@@ -73,6 +85,8 @@ def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR,
         "n_clean": n_clean,
         "n_clean_real": n_real,
         "n_mutants": len(manifest["mutants"]),
+        "n_mutants_narrative_only": sum(narrative_only.values()),
+        "narrative_only_classes": dict(sorted(narrative_only.items())),
         "n_discarded": len(manifest["discarded"]),
         "confidence_floor": floor,
         "static_classes": {c: prf(v) for c, v in per_class.items()},
@@ -106,10 +120,12 @@ def render_report(results: dict) -> str:
         p = f"{r['precision']:.2f}" if r["precision"] is not None else "—"
         rc = f"{r['recall']:.2f}" if r["recall"] is not None else "—"
         lines.append(f"| {c} | {r['tp']} | {r['fn']} | {r['fp']} | {p} | {rc} |")
+    fp = results["clean_fp_rate"]
     lines += [
         "",
-        f"False-positive rate on clean corpus: "
-        f"{results['clean_fp_rate']:.1%} ({len(results['clean_fp_files'])} files)",
+        "False-positive rate on clean corpus: "
+        + (f"{fp:.1%} ({len(results['clean_fp_files'])} files)"
+           if fp is not None else "— (no clean notebooks)"),
         "",
         "## Candidate classes (static half only; fusion with narrative layer is M2)",
         "",
@@ -117,6 +133,18 @@ def render_report(results: dict) -> str:
     for c, r in results["candidate_classes"].items():
         rc = f"{r['recall']:.2f}" if r["recall"] is not None else "—"
         lines.append(f"- {c}: candidate recall {rc} ({r['tp']}/{r['tp'] + r['fn']})")
+    n_narr = results.get("n_mutants_narrative_only", 0)
+    if n_narr:
+        classes = ", ".join(
+            f"{c} ({n})" for c, n in results["narrative_only_classes"].items()
+        )
+        lines += [
+            "",
+            f"Narrative-layer-only mutants (out of static-recall scope, measured "
+            f"by `wald eval --llm`): {n_narr} of {results['n_mutants']} — {classes}. "
+            "They are still checked here for spurious confident static flags "
+            "(counted as cross-class FP above).",
+        ]
     if results["missed_mutants"]:
         lines += ["", "## Missed mutants"]
         lines += [f"- {m}" for m in results["missed_mutants"]]

@@ -35,6 +35,22 @@ def test_call_sites_receiver_and_loop_depth():
     assert test.loop_depth == 1
 
 
+def test_constructor_chained_call_yields_call_site():
+    flow = analyze(nb_from_sources("X = StandardScaler().fit_transform(X)"))
+    fit = next(c for c in flow.calls if c.name == "fit_transform")
+    assert fit.receiver == "StandardScaler()" and fit.arg_names == {"X"}
+    assert any(ev.call is fit for ev in flow.assigns)
+
+
+def test_loop_vars_recorded_on_call_sites():
+    flow = analyze(nb_from_sources(
+        "for c in cols:\n    ttest_ind(a[c], b[c])\nttest_ind(a, b)",
+    ))
+    looped = next(c for c in flow.calls if c.loop_depth == 1)
+    top = next(c for c in flow.calls if c.loop_depth == 0)
+    assert looped.loop_vars == {"c"} and top.loop_vars == set()
+
+
 def test_split_outputs_do_not_reach_split_input_chain():
     flow = analyze(nb_from_sources(
         "X_tr, X_te, y_tr, y_te = train_test_split(X, y)",
@@ -46,6 +62,22 @@ def test_split_outputs_do_not_reach_split_input_chain():
 
 def test_magics_are_stripped_not_fatal():
     flow = analyze(nb_from_sources("%matplotlib inline\na = 1"))
+    assert not flow.parse_errors
+    assert any("a" in ev.targets for ev in flow.assigns)
+
+
+def test_time_line_magic_keeps_wrapped_statement():
+    flow = analyze(nb_from_sources(
+        "%matplotlib inline\n%time X = scaler.fit_transform(X)",
+    ))
+    assert not flow.parse_errors
+    assert any(c.name == "fit_transform" for c in flow.calls)
+    assert any("X" in ev.targets for ev in flow.assigns)
+
+
+def test_timeit_with_options_falls_back_to_pass():
+    # "-n 100 f(x)" is not Python; stripping must not create a parse error
+    flow = analyze(nb_from_sources("%matplotlib inline\n%timeit -n 100 f(x)\na = 1"))
     assert not flow.parse_errors
     assert any("a" in ev.targets for ev in flow.assigns)
 

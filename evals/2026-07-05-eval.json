@@ -1,0 +1,47 @@
+{
+  "date": "2026-07-05",
+  "corpus_built": "2026-07-05",
+  "n_clean": 75,
+  "n_clean_real": 27,
+  "n_mutants": 176,
+  "n_mutants_narrative_only": 32,
+  "narrative_only_classes": {
+    "regression-to-mean-claim": 16,
+    "significance-meaningless": 16
+  },
+  "n_discarded": 0,
+  "confidence_floor": 0.8,
+  "static_classes": {
+    "baserate-accuracy-imbalanced": {
+      "tp": 8,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "leakage-fit-before-split": {
+      "tp": 24,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "testing-multiple-uncorrected": {
+      "tp": 96,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "candidate_classes": {
+    "selection-survivorship-cohort": {
+      "tp": 16,
+      "fn": 0,
+      "recall": 1.0
+    }
+  },
+  "clean_fp_rate": 0.0,
+  "clean_fp_files": [],
+  "missed_mutants": []
+}

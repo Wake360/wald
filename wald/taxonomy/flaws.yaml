@@ -9,7 +9,7 @@
   definition: >
     A transformation (scaler, imputer, encoder, feature selector, PCA,
     vectorizer) is fitted on data that contains the test set.
-  book_anchor: "ISLP ch. 5; validation leak (Chollet)"
+  book_anchor: "ESL §7.10.2 (the wrong way to do cross-validation)"
   failure_scenario: >
     Test metrics are inflated; the production model will underperform the
     reported numbers.
@@ -63,8 +63,9 @@
     multiple-comparison correction.
   book_anchor: "Multiple-Testing-FWER-Inflation; Ellenberg"
   failure_scenario: >
-    At alpha=0.05 the family-wise error rate makes at least one false
-    "discovery" more likely than none; reported findings are noise.
+    At alpha=0.05 uncorrected testing inflates the family-wise error rate
+    far past alpha (1-0.95^n: ~26% at 6 tests, >50% at 14, 99.4% at 100);
+    reported findings are increasingly likely to be noise.
   fix: >
     Apply Bonferroni/Holm or FDR (statsmodels multipletests), or declare
     the analysis exploratory and confirm on fresh data.
@@ -101,8 +102,9 @@
     The intervention gets credit (or blame) for what is partly luck
     reverting; the effect will not replicate.
   fix: >
-    Add a control group of equally extreme units without the intervention,
-    or use shrinkage estimates.
+    Compare against a control group of equally extreme units without the
+    intervention. Shrinkage estimates correct the estimated level but do
+    not establish an effect.
   narrative_enabled: true
   disqualifiers:
     - A control group of equally extreme units is present alongside the
@@ -133,7 +135,7 @@
   definition: >
     Accuracy is the only reported metric while classes are imbalanced
     (>80/20).
-  book_anchor: "base rate fallacy; ISLP classification metrics"
+  book_anchor: "accuracy paradox / null-classifier baseline; ISLP ch. 4"
   failure_scenario: >
     A majority-class predictor achieves the same "94% accuracy"; the model
     may have learned nothing.

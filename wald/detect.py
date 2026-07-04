@@ -22,13 +22,18 @@ TEST_FUNCS = {
     "ks_2samp", "chi2_contingency", "fisher_exact", "pearsonr", "spearmanr",
     "kendalltau", "f_oneway", "kruskal", "binomtest", "proportions_ztest",
 }
-CORRECTION_RE = re.compile(r"multipletests|bonferroni|holm|sidak|fdr", re.IGNORECASE)
+# word-bounded: 'stockholm' or a variable 'fdr_level' must not read as a correction
+CORRECTION_RE = re.compile(
+    r"\b(?:multipletests|bonferroni|holm|sidak|fdr_bh|fdr_by|fdr_tsbh|fdr_tsbky)\b",
+    re.IGNORECASE,
+)
 OTHER_METRIC_RE = re.compile(
     r"roc_auc|f1_score|precision_score|recall_score|balanced_accuracy"
     r"|average_precision|classification_report|confusion_matrix|log_loss"
 )
 SURVIVOR_COLUMNS = {"status", "active", "is_active", "churned", "retained", "completed", "survived"}
-# how many tests a single call site inside a loop is assumed to run (documented heuristic)
+# retained for mutate.verify's applicability check; the detector itself no
+# longer fabricates an iteration count for loops (see detect_multiple_testing)
 LOOP_TEST_WEIGHT = 10
 MULTIPLE_TESTING_THRESHOLD = 5
 IMBALANCE_THRESHOLD = 0.8
@@ -101,6 +106,13 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
     def recv_class(call) -> str | None:
         """Class the receiver was constructed from, resolved at the call's
         position (a later rebind of the name must not rewrite history)."""
+        if call.receiver.endswith("()"):
+            # direct-constructor receiver: StandardScaler().fit(X). Factory
+            # calls (clone(x).fit, make_pipeline(...).fit) resolve to the
+            # factory name, which is not a known transformer class — so the
+            # known-class rule stays conservative for them.
+            head = call.receiver[:-2]
+            return head if head.isidentifier() else None
         ev = flow.last_assign(call.receiver, (call.cell, call.line))
         return ev.call.name if ev is not None and ev.call is not None else None
 
@@ -231,37 +243,91 @@ def detect_multiple_testing(nb: ParsedNotebook, flow: NotebookDataflow) -> list[
         return []
     if CORRECTION_RE.search(nb.full_source()):
         return []
-    effective_n = sum(LOOP_TEST_WEIGHT if c.loop_depth > 0 else 1 for c in sites)
-    if effective_n <= MULTIPLE_TESTING_THRESHOLD:
+    n_static = len(sites)
+    fwer = 1 - 0.95 ** n_static
+    # FWER is only reported from the statically counted sites — never from a
+    # fabricated per-loop iteration count
+    over_threshold = n_static > MULTIPLE_TESTING_THRESHOLD
+    param_vars = sorted(set().union(set(), *(c.arg_names & c.loop_vars for c in sites)))
+    if param_vars:
+        # loop variable reaches the test arguments: the loop enumerates
+        # hypotheses, one per iteration
+        confidence = 0.9
+        evidence = (
+            f"{n_static} test call site(s); at least one parameterized by a loop "
+            f"over `{param_vars[0]}` — per-iteration hypotheses, iteration count "
+            f"not statically known; no correction found"
+            + (f"; FWER at alpha=0.05 from the static sites alone: {fwer:.0%}"
+               if over_threshold else "")
+        )
+    elif over_threshold:
+        confidence = 0.9
+        evidence = (
+            f"{n_static} test call site(s), no correction found; "
+            f"FWER at alpha=0.05: {fwer:.0%}"
+        )
+    elif any(c.loop_depth > 0 for c in sites):
+        # loop variable never reaches the test arguments: likely a
+        # resampling/permutation loop over a single hypothesis
+        confidence = 0.75
+        evidence = (
+            f"{n_static} test call site(s) inside a loop whose variable does not "
+            f"reach the test arguments — likely resampling over one hypothesis "
+            f"(candidate); no correction found"
+        )
+    else:
         return []
-    fwer = 1 - 0.95 ** effective_n
-    looped = any(c.loop_depth > 0 for c in sites)
+    extra = {"n_tests": n_static}
+    if over_threshold:
+        extra["fwer"] = round(fwer, 3)
     first = sites[0]
     return [
         _make_flag(
             "testing-multiple-uncorrected",
-            confidence=0.9,
+            confidence=confidence,
             cell=first.cell,
             line=first.line,
-            evidence=(
-                f"{len(sites)} test call site(s)"
-                + (" including tests inside a loop" if looped else "")
-                + f"; estimated >= {effective_n} tests, no correction found; "
-                f"FWER at alpha=0.05: {fwer:.0%}"
-            ),
-            n_tests=effective_n,
-            fwer=round(fwer, 3),
+            evidence=evidence,
+            **extra,
         )
     ]
 
 
-def _imbalance_from_outputs(nb: ParsedNotebook) -> float | None:
-    """Parse value_counts-style stored outputs; return majority share if found."""
-    for cell in nb.code_cells:
-        if "value_counts" not in cell.source or not cell.outputs_text:
+_VC_COLUMN_RE = re.compile(r"\[['\"](\w+)['\"]\]|\.(\w+)$")
+
+
+def _imbalance_from_outputs(nb: ParsedNotebook, flow: NotebookDataflow,
+                            y_names: set[str], at: tuple[int, int]) -> float | None:
+    """Majority share parsed from a value_counts stored output, but only when
+    the counted series links to the scored target: a plain-name receiver whose
+    binding is on y's dependency chain, or a column receiver whose literal
+    column name appears in a y-chain assignment line. A skewed unrelated
+    feature must not drive the base-rate verdict, and an unrelated balanced
+    one must not clear it."""
+    events, bindings = flow.chain(y_names, at)
+    src = {c.index: c.source.splitlines() for c in nb.code_cells}
+    chain_text = "\n".join(
+        src[ev.cell][ev.line - 1]
+        for ev in events
+        if ev.cell in src and 0 < ev.line <= len(src[ev.cell])
+    )
+    outputs = {c.index: c.outputs_text for c in nb.code_cells}
+    for vc in flow.calls:
+        if vc.name != "value_counts" or vc.receiver is None:
+            continue
+        out = outputs.get(vc.cell, "")
+        if not out:
+            continue
+        m = _VC_COLUMN_RE.search(vc.receiver)
+        col = (m.group(1) or m.group(2)) if m else None
+        if col is None:
+            linked = flow.binding(vc.receiver, (vc.cell, vc.line)) in bindings
+        else:
+            linked = f"'{col}'" in chain_text or f'"{col}"' in chain_text
+        if not linked:
             continue
         values = []
-        for line in cell.outputs_text.splitlines():
+        for line in out.splitlines():
             parts = line.split()
             if len(parts) >= 2:
                 try:
@@ -279,8 +345,9 @@ def detect_baserate_accuracy(nb: ParsedNotebook, flow: NotebookDataflow) -> list
         return []
     if OTHER_METRIC_RE.search(nb.full_source()):
         return []
-    majority = _imbalance_from_outputs(nb)
     first = acc_calls[0]
+    y_names = first.pos_args[0] if first.pos_args else first.kw_args.get("y_true", set())
+    majority = _imbalance_from_outputs(nb, flow, y_names, (first.cell, first.line))
     if majority is not None and majority < IMBALANCE_THRESHOLD:
         return []  # accuracy-only is defensible on balanced classes
     if majority is None:
@@ -302,11 +369,13 @@ def detect_baserate_accuracy(nb: ParsedNotebook, flow: NotebookDataflow) -> list
 SURVIVOR_FILTER_RE = re.compile(
     r"(\w+)\s*=\s*\1\[\s*\1(?:\.(\w+)|\[\s*[\"'](\w+)[\"']\s*\])\s*(?:==|!=)",
 )
-# self-filter via .query, e.g. df = df.query("status == 'active'"); the
-# quoted column is the first identifier before the comparison operator
-SURVIVOR_QUERY_RE = re.compile(
-    r"(\w+)\s*=\s*\1\.query\(\s*[\"']\s*(\w+)\s*(?:==|!=)",
-)
+# self-filter via .query, e.g. df = df.query("status == 'active'"), including
+# chained .query calls; the column is the first (optionally backtick-quoted)
+# identifier before the comparison operator. An f-string or non-literal query
+# expression is unresolvable and skipped — no guessing.
+SURVIVOR_QUERY_ASSIGN_RE = re.compile(r"(\w+)\s*=\s*\1\b[^\n]*")
+SURVIVOR_QUERY_STRING_RE = re.compile(r"\.query\(\s*([A-Za-z]*)([\"'])(.*?)\2")
+SURVIVOR_QUERY_COND_RE = re.compile(r"^\s*`?(\w+)`?\s*(?:==|!=)")
 
 
 def _survivor_filter_columns(source: str):
@@ -314,8 +383,13 @@ def _survivor_filter_columns(source: str):
     in a cell, across both the subscript and .query idioms."""
     for m in SURVIVOR_FILTER_RE.finditer(source):
         yield m.start(), (m.group(2) or m.group(3) or "").lower()
-    for m in SURVIVOR_QUERY_RE.finditer(source):
-        yield m.start(), m.group(2).lower()
+    for am in SURVIVOR_QUERY_ASSIGN_RE.finditer(source):
+        for qm in SURVIVOR_QUERY_STRING_RE.finditer(am.group(0)):
+            if "f" in qm.group(1).lower():
+                continue  # f-string: the filter expression is dynamic
+            cm = SURVIVOR_QUERY_COND_RE.match(qm.group(3))
+            if cm:
+                yield am.start() + qm.start(), cm.group(1).lower()
 
 
 def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) -> list[Flag]:

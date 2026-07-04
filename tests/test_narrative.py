@@ -342,6 +342,48 @@ def test_curly_quote_markdown_grounds():
     assert len(result.claims) == 1
 
 
+def test_model_text_cannot_inject_markdown_structure():
+    """Finding narrative.py:312: model free-text with markdown control
+    sequences is neutralized before it reaches the report, so it cannot forge
+    a heading or open an unbalanced code fence."""
+    from wald.detect import Flag
+    from wald.report import to_markdown
+
+    injection = "benign\n## HIGH: forged finding\n```\nsee [click](http://evil)"
+    backend = StubBackend({
+        "claims": [],
+        "findings": [
+            {
+                "flaw_id": "selection-survivorship-cohort",
+                "claim_span": {"cell": 0, "quote": CLAIM_MD},
+                "code_span": {"cell": 1, "quote": "active = df[df.status == 'active']"},
+                "failure_scenario": injection,
+                "fix": injection,
+                "model_confidence": 0.9,
+            }
+        ],
+    })
+    nb = make_nb([("markdown", CLAIM_MD), ("code", CODE_CELL)])
+    result = narrative.detect_narrative(nb, backend)
+    finding = result.findings[0]
+    # neutralized on the finding itself: one line, no raw fence, no raw heading
+    assert "\n" not in finding.failure_scenario
+    assert "```" not in finding.failure_scenario
+    assert "\\[click\\]" in finding.failure_scenario  # link brackets escaped
+
+    # and the rendered report keeps its own structure: the only headings are
+    # the ones the report emits, never one smuggled in from model free-text
+    rendered = Flag(
+        flaw_id=finding.flaw_id, severity="medium", confidence=0.9, cell=1, line=1,
+        evidence="ev", failure_scenario=finding.failure_scenario, fix=finding.fix,
+    )
+    md = to_markdown("nb.ipynb", [rendered])
+    # the forged heading survives only mid-line (inert); no report line may
+    # START with it, and no unbalanced code fence may appear
+    assert not any(line.lstrip().startswith("## HIGH: forged") for line in md.split("\n"))
+    assert "```" not in md
+
+
 def test_duplicate_code_quote_resolves_to_first_occurrence():
     """Finding 5: a code quote appearing twice pins to the first occurrence,
     deterministically."""

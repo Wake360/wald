@@ -42,6 +42,17 @@ def _code(text):
     return nbformat.v4.new_code_cell(text)
 
 
+def _normalize(nb, stem: str):
+    """Make serialization byte-deterministic across rebuilds (T15): derive
+    cell ids from the notebook stem + position (nbformat otherwise mints a
+    fresh random id per cell every build) and drop nbclient's per-cell
+    execution timestamps, which are transient and regenerated on each run."""
+    for i, cell in enumerate(nb.cells):
+        cell["id"] = f"{stem}-{i}"
+        cell.get("metadata", {}).pop("execution", None)
+    return nb
+
+
 CHURN_COLS = [
     "tenure_months", "monthly_spend", "support_tickets", "logins_per_week",
     "discount_share", "emails_opened", "pages_per_session",
@@ -491,6 +502,7 @@ def build_clean(root: Path, seeds, split: str, log=print) -> list[dict]:
             name = f"{family}-s{seed}.ipynb"
             log(f"clean: {name}")
             executed = ex.execute(builder(seed))
+            _normalize(executed, Path(name).stem)
             nbformat.write(executed, str(clean_dir / name))
             entries.append({"file": f"clean/{name}", "family": family,
                             "seed": seed, "split": split})
@@ -522,7 +534,13 @@ def build_mutants(root: Path, clean_entries, log=print) -> tuple[list[dict], lis
                 if concl is not None:
                     record["conclusion"] = concl
                 if ok:
-                    nbformat.write(mutated, str(mut_dir / name))
+                    # execute the mutant before writing so stored outputs
+                    # reflect the mutated code; apply() only clears outputs of
+                    # the edited cell, leaving downstream cells with stale
+                    # clean outputs that can contradict the mutant's label
+                    executed = ex.execute(mutated)
+                    _normalize(executed, Path(name).stem)
+                    nbformat.write(executed, str(mut_dir / name))
                     entries.append(record)
                 else:
                     discarded.append(record)
@@ -580,15 +598,19 @@ def build_negative_flags(root: str | Path, log=print) -> dict:
                 "cited cell and the notebook attributes the movement to "
                 "regression to the mean",
             ))
-            # reserved entirely for held-out G3: never tuned on (m2 plan §6)
-            flags.append(entry(
-                "leakage-fit-before-split", "legit-cv-generalization", "heldout", c["file"],
-                (6, "Cross-validated accuracy estimates how the model will "
-                    "perform on unseen customers"),
-                (5, "scores = cross_val_score(pipe, X, y, cv=5)"),
-                "the estimator is a Pipeline: the scaler is refit inside "
-                "each training fold and never sees that fold's test rows",
-            ))
+            # reserved entirely for held-out G3: never tuned on (m2 plan §6).
+            # only cite held-out program notebooks — a dev-split source here
+            # would let a prompt overfit on a tuned-on notebook pass the
+            # "held-out" leakage-generalization check and inflate G3.
+            if c["split"] == "heldout":
+                flags.append(entry(
+                    "leakage-fit-before-split", "legit-cv-generalization", "heldout", c["file"],
+                    (6, "Cross-validated accuracy estimates how the model will "
+                        "perform on unseen customers"),
+                    (5, "scores = cross_val_score(pipe, X, y, cv=5)"),
+                    "the estimator is a Pipeline: the scaler is refit inside "
+                    "each training fold and never sees that fold's test rows",
+                ))
     for m in manifest["mutants"]:
         if m["flaw_id"] != "selection-survivorship-cohort":
             continue

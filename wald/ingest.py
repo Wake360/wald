@@ -40,6 +40,16 @@ def _output_text(output) -> str:
     return data.get("text/plain", "")
 
 
+def _coerce_source(value) -> str:
+    """nbformat stores source as a str, but hand-edited/lossy JSON can carry a
+    line list or an explicit null; both must lint, not crash downstream."""
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return "".join(str(x) for x in value)
+    return str(value)
+
+
 def parse_notebook(path: str | Path) -> ParsedNotebook:
     nb = nbformat.read(str(path), as_version=4)
     return from_nbnode(nb, path=Path(path))
@@ -48,8 +58,17 @@ def parse_notebook(path: str | Path) -> ParsedNotebook:
 def from_nbnode(nb, path: Path | None = None) -> ParsedNotebook:
     cells = []
     for i, c in enumerate(nb.cells):
+        cell_type = c.get("cell_type", "")
         outputs = ""
-        if c.cell_type == "code":
-            outputs = "\n".join(_output_text(o) for o in c.get("outputs", []))
-        cells.append(Cell(index=i, cell_type=c.cell_type, source=c.source, outputs_text=outputs))
+        if cell_type == "code":
+            raw = c.get("outputs") or []  # missing or explicit-null outputs -> []
+            if not isinstance(raw, list):
+                raw = []
+            outputs = "\n".join(_output_text(o) for o in raw)
+        cells.append(Cell(
+            index=i,
+            cell_type=cell_type,
+            source=_coerce_source(c.get("source")),
+            outputs_text=outputs,
+        ))
     return ParsedNotebook(path=path, cells=cells)

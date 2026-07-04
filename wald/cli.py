@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
+from nbformat.reader import NotJSONError
+
+from .dataflow import analyze
 from .detect import DEFAULT_CONFIDENCE_FLOOR, run_static
 from .ingest import parse_notebook
-from .report import exit_code, to_json, to_markdown
+from .report import exit_code, parse_warning, report_obj, to_markdown
+
+# environment variable each api backend needs before it can make a request
+_KEY_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 
 
 def _llm_backends(replay_dir):
@@ -25,7 +32,10 @@ def _llm_backends(replay_dir):
 def _heldout_refusal(path, det, ver) -> str | None:
     """Held-out corpus notebooks are gate-only (m2 item 11): block `check
     --llm` on them so the eval guard can't be sidestepped notebook-by-notebook
-    with a replay/agent backend."""
+    with a replay/agent backend. Real-world corpus notebooks (corpus/real/*)
+    are held-out material too — eval folds them into the heldout clean set and
+    their manifest carries no per-entry split field, so they are refused by
+    living under a `real/` manifest."""
     if det.kind == "api" and ver.kind == "api":
         return None
     p = Path(path).resolve()
@@ -34,19 +44,56 @@ def _heldout_refusal(path, det, ver) -> str | None:
         if not manifest_path.exists():
             continue
         manifest = json.loads(manifest_path.read_text())
-        rel = str(p.relative_to(anc))
         entries = manifest.get("clean", []) + manifest.get("mutants", [])
-        if any(e.get("file") == rel and e.get("split") == "heldout" for e in entries):
-            return f"{path}: held-out corpus notebook is gate-only, refusing --llm check"
+        for e in entries:
+            f = e.get("file")
+            # manifest paths are relative to the manifest dir (corpus/clean/..)
+            # or to the corpus root (real/MANIFEST.json prefixes with "real/")
+            if f is None or p not in ((anc / f).resolve(), (anc.parent / f).resolve()):
+                continue
+            if e.get("split") == "heldout" or anc.name == "real":
+                return f"{path}: held-out corpus notebook is gate-only, refusing --llm check"
         break
     return None
 
 
+def _missing_llm_keys(*backends) -> list[str]:
+    """Env vars an api backend needs but that are unset (replay/agent need none)."""
+    missing = []
+    for b in backends:
+        if b.kind == "api":
+            env = _KEY_BY_PROVIDER.get(b.provider)
+            if env and not os.environ.get(env):
+                missing.append(env)
+    return sorted(set(missing))
+
+
+def _input_error(exc: Exception) -> str:
+    if isinstance(exc, FileNotFoundError):
+        return "no such file"
+    if isinstance(exc, IsADirectoryError):
+        return "is a directory, not a notebook"
+    if isinstance(exc, UnicodeDecodeError):
+        return "not valid UTF-8 text"
+    if isinstance(exc, NotJSONError):
+        return "not a valid notebook (invalid JSON)"
+    return str(exc)
+
+
 def cmd_check(args) -> int:
+    if not 0.0 <= args.floor <= 1.0:
+        print(f"wald: --floor must be between 0 and 1 (got {args.floor})", file=sys.stderr)
+        return 3
     if args.llm:
         from .fuse import run_full
 
         det, ver = _llm_backends(args.replay_dir)
+        missing = _missing_llm_keys(det, ver)
+        if missing:
+            print(f"wald: --llm needs {' and '.join(missing)} set in the environment",
+                  file=sys.stderr)
+            return 3
+    reports = []
     worst = 0
     for path in args.notebooks:
         if args.llm:
@@ -54,13 +101,21 @@ def cmd_check(args) -> int:
             if refusal:
                 print(refusal, file=sys.stderr)
                 return 2
-        nb = parse_notebook(path)
+        try:
+            nb = parse_notebook(path)
+        except (OSError, ValueError) as exc:
+            print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
+            return 3
         flags = run_full(nb, det, ver) if args.llm else run_static(nb)
+        warning = parse_warning(len(analyze(nb).parse_errors), len(nb.code_cells))
         if args.format == "json":
-            print(to_json(path, flags, args.floor))
+            reports.append(report_obj(path, flags, args.floor, args.severity_gate, warning))
         else:
-            print(to_markdown(path, flags, args.floor))
+            print(to_markdown(path, flags, args.floor, warning))
         worst = max(worst, exit_code(flags, args.floor, args.severity_gate))
+    if args.format == "json":
+        # one bare object for a single notebook (back-compat), an array for many
+        print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
     return worst
 
 
@@ -104,10 +159,15 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="wald", description="Statistical-integrity linter for notebooks.")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_check = sub.add_parser("check", help="lint notebook(s); exit 2 on high-severity findings")
+    p_check = sub.add_parser(
+        "check",
+        help="lint notebook(s); exit 0 clean / 1 medium / 2 high-severity / 3 input or usage error",
+    )
     p_check.add_argument("notebooks", nargs="+")
-    p_check.add_argument("--format", choices=["md", "json"], default="md")
-    p_check.add_argument("--floor", type=float, default=DEFAULT_CONFIDENCE_FLOOR)
+    p_check.add_argument("--format", choices=["md", "json"], default="md",
+                         help="json emits one object for a single notebook, a JSON array for several")
+    p_check.add_argument("--floor", type=float, default=DEFAULT_CONFIDENCE_FLOOR,
+                         help="confidence floor in [0, 1]")
     p_check.add_argument("--severity-gate", choices=["medium", "high"], default="high")
     p_check.add_argument("--llm", action="store_true",
                          help="add the narrative layer (needs API keys)")

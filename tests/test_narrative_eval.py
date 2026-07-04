@@ -290,3 +290,19 @@ def test_heldout_refusal_allows_api_backend_and_dev_split(tmp_path):
     det = ReplayBackend(tmp_path / "d2")
     ver = ReplayBackend(tmp_path / "v2")
     assert _heldout_refusal(tmp_path / "clean" / "foo.ipynb", det, ver) is None
+
+
+def test_heldout_refusal_blocks_real_corpus_notebook(tmp_path):
+    """Finding cli.py:25: corpus/real/* is held-out gate-only material even
+    though its manifest carries no split field and prefixes paths with real/."""
+    real = tmp_path / "real"
+    real.mkdir()
+    (real / "nb.ipynb").write_text("{}")
+    # mirrors corpus/real/MANIFEST.json: "real/"-prefixed paths, no split key
+    (real / "MANIFEST.json").write_text(json.dumps({
+        "clean": [{"file": "real/nb.ipynb", "repo": "x/y"}], "mutants": [],
+    }))
+    det = ReplayBackend(tmp_path / "d3")
+    ver = ReplayBackend(tmp_path / "v3")
+    msg = _heldout_refusal(real / "nb.ipynb", det, ver)
+    assert msg is not None and "held-out" in msg
