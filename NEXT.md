@@ -20,21 +20,22 @@ recall number (needs ≥ 30 confirmed real flaws, we have 7).
   function-scoped target-correlation selection. Both need M2/M3, not more
   static heuristics — resist the urge.
 
-## 2. M2 — LLM narrative layer (blocked on API key + ~$150 budget)
+## 2. M2 — LLM narrative layer (planned; runs blocked on keys)
 
-Unchanged plan, one addition from the dogfood data: the contested pre-CV
-unsupervised fits (candidates at 0.75) are now a third fusion input
-besides survivorship — narrative claims about CV scores + static pre-CV
-fit candidate = confident flag.
+Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
+3-designer + 2-critic workflow). Key points:
 
-- Layer B detector: claims vs. code consistency, closed taxonomy,
-  prompt generated from `flaws.yaml`, structured output, two mandatory
-  evidence spans per flag.
-- Verifier on a different provider; negative corpus of seeded false
-  flags; gates G2 (F1 ≥ 0.7, FP ≤ 10%) and G3 (verifier kills ≥ 80%).
-- New narrative classes: survivorship decision, regression-to-mean,
-  significant-but-meaningless. Mutations for each exist as recipes in
-  the plan (LifeOS `outputs/wald-plan.md`, Příloha A).
+- Phase 1 is key-free and buildable now: narrative mutations, held-out
+  split, negative corpus (one recipe mined from the 119 dogfood FPs),
+  backend seam, detector, verifier, fusion, eval extension — all tested
+  against replay fixtures.
+- Phase 3 needs TWO keys (Anthropic detector + OpenAI verifier;
+  cross-provider is a hard constraint). Projected spend ~$30–45 of the
+  $150 budget.
+- Only the three mutant-backed classes enter the prompt; pre-CV fusion
+  ships FP-gated but recall-unclaimed; confidences are fixed constants,
+  never the model's number; held-out contamination is structurally
+  prevented (eval raises), not just labeled.
 
 ## 3. Publish
 
