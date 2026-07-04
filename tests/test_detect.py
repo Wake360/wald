@@ -127,3 +127,183 @@ def test_survivorship_silent_on_scoped_variable_name():
     assert not [
         f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"
     ]
+
+
+# -- behaviors fixed by the 2026-07-04 dogfood review (see evals/) --
+
+
+def test_leakage_silent_on_estimator_fit_full_data():
+    # model fit for visualization is not preprocessing leakage
+    notebook = nb([
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+        ("code", "clf = KNeighborsClassifier()\nclf.fit(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_silent_on_label_encoder():
+    notebook = nb([
+        ("code", "le = LabelEncoder()\ny = le.fit_transform(y)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_silent_on_name_reuse_across_sections():
+    # second dataset reuses the name X; the sections are unrelated
+    notebook = nb([
+        ("code", "X = scaler.fit_transform(X)"),
+        ("code", "X = load_other_dataset()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_silent_on_unassigned_fit_transform():
+    # result discarded: fitted statistics never reach the split
+    notebook = nb([
+        ("code", "scaler.fit_transform(X)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_flagged_full_fit_then_transform_split_part():
+    notebook = nb([
+        ("code", "scaler = StandardScaler()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+        ("code", "scaler.fit(X)\nX_te_s = scaler.transform(X_te)"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_supervised_selector_before_cv_flagged():
+    notebook = nb([
+        ("code", "skb = SelectKBest(chi2, k=15)\nskb.fit(X, y)"),
+        ("code", "Xs = skb.transform(X)"),
+        ("code", "scores = cross_val_score(lr, Xs, y, cv=5)"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_unsupervised_fit_before_cv_is_candidate():
+    notebook = nb([
+        ("code", "scaler = StandardScaler()\nXs = scaler.fit_transform(X)"),
+        ("code", "scores = cross_val_score(clf, Xs, y, cv=5)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+    assert flags and all(f.confidence < 0.8 for f in flags)
+
+
+def test_leakage_silent_on_pipeline_estimator_in_cv():
+    # a transformer inside the CV'd pipeline is refit per fold: correct usage
+    notebook = nb([
+        ("code", "knn_transformer = FeatureFromRegressor(knn)\nknn_transformer.fit_transform(X, y)"),
+        ("code", "pipe = Pipeline([('prep', knn_transformer), ('svr', SVR())])"),
+        ("code", "scores = cross_val_score(pipe, X, y, cv=3)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_self_statistic_imputation_before_split():
+    notebook = nb([
+        ("code", "data['a'] = data['a'].replace(0, data['a'].median())"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(data[cols], data['y'])"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_imputation_one_flag_per_cell():
+    src = "\n".join(
+        f"data['{c}'] = data['{c}'].replace(0, data['{c}'].median())" for c in "abc"
+    )
+    notebook = nb([
+        ("code", src),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(data[cols], data['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+    assert len(flags) == 1
+
+
+def test_leakage_imputation_on_train_split_only_silent():
+    notebook = nb([
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+        ("code", "X_tr = X_tr.fillna(X_tr.median())"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+# -- behaviors fixed by the 2026-07-04 code review --
+
+
+def test_leakage_unsupervised_multi_name_arg_stays_candidate():
+    # df[num_cols] mentions two names but is one argument: not "fitted with labels"
+    notebook = nb([
+        ("code", "scaler = StandardScaler()\nXs = scaler.fit_transform(df[num_cols])"),
+        ("code", "scores = cross_val_score(clf, Xs, y, cv=5)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+    assert flags and all(f.confidence < 0.8 for f in flags)
+
+
+def test_leakage_supervised_selector_single_frame_spelling_flagged():
+    notebook = nb([
+        ("code", "skb = SelectKBest(chi2, k=15)\nskb.fit(data.drop(columns=[t]), data[t])"),
+        ("code", "Xs = skb.transform(data)"),
+        ("code", "scores = cross_val_score(lr, Xs, data[t], cv=5)"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_imputation_silent_after_frame_rebind():
+    notebook = nb([
+        ("code", "data['a'] = data['a'].replace(0, data['a'].median())"),
+        ("code", "data = load_other_dataset()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(data[cols], data['y'])"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_receiver_rebind_does_not_whitelist_earlier_fit():
+    notebook = nb([
+        ("code", "enc = StandardScaler()\nenc.fit(X)\nXs = enc.transform(X)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(Xs, y)"),
+        ("code", "enc = LabelEncoder()\ny2 = enc.fit_transform(labels)"),
+    ])
+    assert "leakage-fit-before-split" in flag_ids(notebook)
+
+
+def test_leakage_silent_on_estimator_in_shared_container():
+    notebook = nb([
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+        ("code", "models['clf'].fit(X, y)"),
+        ("code", "Xs = models['scaler'].transform(X_te)"),
+    ])
+    assert "leakage-fit-before-split" not in flag_ids(notebook)
+
+
+def test_leakage_two_fits_same_line_two_flags():
+    notebook = nb([
+        ("code", "Xa = s1.fit_transform(A); Xb = s2.fit_transform(B)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(Xa, Xb)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+    assert len(flags) == 2
+
+
+def test_leakage_imputation_one_flag_per_frame_across_cells():
+    notebook = nb([
+        ("code", "df['a'] = df['a'].fillna(df['a'].median())"),
+        ("code", "df['b'] = df['b'].fillna(df['b'].median())"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+    assert len(flags) == 1
+
+
+def test_leakage_cv_groups_kwarg_not_a_data_seed():
+    notebook = nb([
+        ("code", "groups = df['user_id']\ndf['s'] = scaler.fit_transform(df[cols])"),
+        ("code", "scores = cross_val_score(clf, X_other, y_other, groups=groups)"),
+    ])
+    assert not [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]

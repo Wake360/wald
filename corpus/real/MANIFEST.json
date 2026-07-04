@@ -1,0 +1,221 @@
+{
+  "reviewed": "2026-07-04",
+  "clean": [
+    {
+      "file": "real/00__ageron_handson-ml3__03_classification.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "03_classification.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/01__rasbt_python-machine-learning-book-3rd-edition__ch07.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch07/ch07.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/02__ageron_handson-ml3__02_end_to_end_machine_learning_project.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "02_end_to_end_machine_learning_project.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/03__rasbt_python-machine-learning-book-3rd-edition__ch06.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch06/ch06.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/04__ageron_handson-ml3__07_ensemble_learning_and_random_forests.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "07_ensemble_learning_and_random_forests.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/05__rasbt_python-machine-learning-book-3rd-edition__ch08.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch08/ch08.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/06__rasbt_python-machine-learning-book-3rd-edition__ch04.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch04/ch04.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/09__ageron_handson-ml3__05_support_vector_machines.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "05_support_vector_machines.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/11__rasbt_python-machine-learning-book-3rd-edition__ch03.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch03/ch03.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/13__ageron_handson-ml3__04_training_linear_models.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "04_training_linear_models.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/14__ageron_handson-ml3__08_dimensionality_reduction.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "08_dimensionality_reduction.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/15__ageron_handson-ml3__06_decision_trees.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "06_decision_trees.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/16__dipanjanS_practical-machine-learning-with-python__Building, Tuning and Deploying Models.ipynb",
+      "repo": "dipanjanS/practical-machine-learning-with-python",
+      "license": "Apache-2.0",
+      "source_path": "notebooks/Ch05_Building_Tuning_and_Deploying_Models/Building, Tuning and Deploying Models.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/17__dipanjanS_practical-machine-learning-with-python__Predictive Analytics.ipynb",
+      "repo": "dipanjanS/practical-machine-learning-with-python",
+      "license": "Apache-2.0",
+      "source_path": "notebooks/Ch09_Analyzing_Wine_Types_and_Quality/Predictive Analytics.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/18__rasbt_python-machine-learning-book-3rd-edition__ch05.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch05/ch05.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/19__rasbt_python-machine-learning-book-3rd-edition__ch10.ipynb",
+      "repo": "rasbt/python-machine-learning-book-3rd-edition",
+      "license": "MIT",
+      "source_path": "ch10/ch10.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/20__ageron_handson-ml3__09_unsupervised_learning.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "09_unsupervised_learning.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/21__dipanjanS_practical-machine-learning-with-python__decision_tree_regression.ipynb",
+      "repo": "dipanjanS/practical-machine-learning-with-python",
+      "license": "Apache-2.0",
+      "source_path": "notebooks/Ch06_Analyzing_Bike_Sharing_Trends/decision_tree_regression.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/22__jakevdp_PythonDataScienceHandbook__05.03-Hyperparameters-and-Model-Validation.ipynb",
+      "repo": "jakevdp/PythonDataScienceHandbook",
+      "license": "MIT",
+      "source_path": "notebooks_v1/05.03-Hyperparameters-and-Model-Validation.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/24__WillKoehrsen_Data-Analysis__logistic-regression-basics.ipynb",
+      "repo": "WillKoehrsen/Data-Analysis",
+      "license": "MIT",
+      "source_path": "logistic_regression/logistic-regression-basics.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/25__WillKoehrsen_Data-Analysis__Improving Random Forest Part 2.ipynb",
+      "repo": "WillKoehrsen/Data-Analysis",
+      "license": "MIT",
+      "source_path": "random_forest_explained/Improving Random Forest Part 2.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/26__ageron_handson-ml3__13_loading_and_preprocessing_data.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "13_loading_and_preprocessing_data.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/27__ageron_handson-ml3__12_custom_models_and_training_with_tensorflow.ipynb",
+      "repo": "ageron/handson-ml3",
+      "license": "Apache-2.0",
+      "source_path": "12_custom_models_and_training_with_tensorflow.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/28__dipanjanS_practical-machine-learning-with-python__linear_regression.ipynb",
+      "repo": "dipanjanS/practical-machine-learning-with-python",
+      "license": "Apache-2.0",
+      "source_path": "notebooks/Ch06_Analyzing_Bike_Sharing_Trends/linear_regression.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/29__dipanjanS_practical-machine-learning-with-python__Predicting Student Recommendation Machine Learning Pipeline.ipynb",
+      "repo": "dipanjanS/practical-machine-learning-with-python",
+      "license": "Apache-2.0",
+      "source_path": "notebooks/Ch01_Machine_Learning_Basics/Predicting Student Recommendation Machine Learning Pipeline.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/31__jakevdp_PythonDataScienceHandbook__05.13-Kernel-Density-Estimation.ipynb",
+      "repo": "jakevdp/PythonDataScienceHandbook",
+      "license": "MIT",
+      "source_path": "notebooks_v1/05.13-Kernel-Density-Estimation.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    },
+    {
+      "file": "real/32__jakevdp_PythonDataScienceHandbook__05.14-Image-Features.ipynb",
+      "repo": "jakevdp/PythonDataScienceHandbook",
+      "license": "MIT",
+      "source_path": "notebooks_v1/05.14-Image-Features.ipynb",
+      "review": "2026-07-04 dogfood (evals/2026-07-04-dogfood.md): hand-reviewed clean",
+      "note": "image outputs stripped for size; text outputs preserved"
+    }
+  ]
+}

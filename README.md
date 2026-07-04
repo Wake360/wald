@@ -54,25 +54,43 @@ Detection quality is then a confusion matrix per flaw class, not an opinion:
 | baserate-accuracy-imbalanced | 4 | 4 | 0 | 0 | 1.00 | 1.00 |
 | selection-survivorship-cohort (candidate) | 8 | 8 | 0 | — | — | 1.00 |
 
-False-positive rate on the 20-notebook clean corpus: **0.0%**. 64/64
-mutants passed mechanical verification at build; 0 discarded.
-(Eval 2026-07-02, `evals/2026-07-02-eval.md`.)
+False-positive rate on the 47-notebook clean corpus (20 synthetic + 27
+hand-reviewed real notebooks from Apache-2.0/MIT repositories): **0.0%**.
+64/64 mutants passed mechanical verification at build; 0 discarded.
+(Eval 2026-07-04, `evals/2026-07-04-eval.md`.)
 
 Reproduce: `wald corpus build && wald eval`. Dated reports live in `evals/`.
 
-**Honest caveat:** the v1 corpus is synthetic and stereotypical by design.
-These numbers measure detector correctness on canonical pandas/sklearn
-idioms, not real-world recall. Dogfooding on real notebooks is the next
-milestone, and the corpus format accepts licensed real notebooks.
+**Dogfooded on real notebooks** (`evals/2026-07-04-dogfood.md`): the first
+run on 34 real notebooks produced a 50% file flag rate — 119 of 124 flags
+were false positives, hand-reviewed one by one. The detector was rebuilt
+from that data (flow-sensitive dataflow, transformer/estimator distinction,
+CV-aware sinks). After the fix: 3 confident flags on the same 34 notebooks,
+all three confirmed real leaks, 0 known false positives. The report keeps
+the full failure taxonomy; the 27 clean notebooks entered the corpus with
+licenses recorded per file.
+
+**Honest caveat:** real-flaw recall is measured against only 7 confirmed
+instances so far — enough to fix the detector, too few to report as a
+recall number. Sources are teaching-oriented repositories; production
+notebooks are messier.
 
 ## What Wald sees (v1) and what it doesn't
 
 The static layer (deterministic, no API key, runs in CI) decides three
 classes on its own:
 
-- `leakage-fit-before-split` — def-use dataflow: a transformer's
-  `.fit`/`.fit_transform` consumes an ancestor of the `train_test_split`
-  inputs.
+- `leakage-fit-before-split` — flow-sensitive def-use dataflow: a
+  *transformer* (not a model) is fitted on data whose transformed output
+  feeds `train_test_split`, or transforms a split part after a full-data
+  fit. Cross-validation counts as an evaluation sink: supervised selection
+  fitted on the CV data (`SelectKBest.fit(X, y)` → `cross_val_score`) is a
+  confident flag; unsupervised pre-CV fits (scaler/PCA) stay below the
+  floor as candidates. Pandas self-statistic imputation before the split
+  (`df[c].replace(0, df[c].median())`) is covered. Pipelines passed to CV,
+  fits on the train split, label encoding and estimator fits are not
+  flagged — each of those idioms was a measured false-positive class in
+  the dogfood report.
 - `testing-multiple-uncorrected` — counts statistical test call sites
   (loops weighted), checks for corrections, reports the implied FWER.
 - `baserate-accuracy-imbalanced` — accuracy as the only metric while class
@@ -137,8 +155,8 @@ time, to verify mutations.
   rules in taxonomy. Gates: F1 ≥ 0.7, verifier kills ≥ 80% of seeded false
   flags.
 - **M3** — table consistency checks (cohort sums vs. declared population).
-- **M4** — GitHub Action with PR annotations, severity calibration,
-  dogfood on real (licensed) notebooks.
+- **M4** — GitHub Action with PR annotations, severity calibration.
+  (Dogfood on real licensed notebooks: done, `evals/2026-07-04-dogfood.md`.)
 - Corpus contributions welcome: a clean notebook must satisfy the clean
   criteria in `wald/corpus.py` and pass review; a new flaw class needs a
   taxonomy record, a detector, and a mutation with mechanical `verify()`.

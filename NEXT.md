@@ -1,40 +1,31 @@
 # Next steps
 
-State (2026-07-02): M0+M1 done. Static layer, CLI, mutation corpus
-(20 clean + 64 verified mutants), gates G0+G1 green, 31 tests. Eval
-numbers are perfect because the corpus is synthetic — that is a caveat,
-not an achievement. Repo is local-only.
+State (2026-07-04): M0+M1 done, dogfood done. First contact with 34 real
+notebooks produced the predicted FP flood (119/124 flags false); detector
+rebuilt from the review data — flow-sensitive dataflow, transformer vs.
+estimator, CV sinks, imputation pattern. After: 3 confident flags on the
+same set, all confirmed real, 0 known FPs, parse errors 0. 27 reviewed
+clean notebooks folded into `corpus/real/` with licenses; clean corpus is
+now 47 files at 0.0% FP. 47 tests. Full story: `evals/2026-07-04-dogfood.md`.
+Blogpost #1 drafted (`posts/`). Repo still local-only.
 
-Order below is deliberate: the free, honest test comes before any spend.
+## 1. Widen the dogfood set (no key, incremental)
 
-## 1. Dogfood on real notebooks (no key, ~1 afternoon)
+Teaching repos are the easy case. Next: messier sources — Kaggle kernels
+proper (needs `kaggle` CLI + credentials, licenses recorded per kernel),
+or GitHub search for analysis notebooks in org repos. Target: first real
+recall number (needs ≥ 30 confirmed real flaws, we have 7).
 
-The plan's R1 risk: false-positive fatigue kills linters. Measure it.
+- Known miss classes to keep on the list: groupby-`apply` imputation,
+  function-scoped target-correlation selection. Both need M2/M3, not more
+  static heuristics — resist the urge.
 
-- Source: Kaggle kernels (Apache-2.0 by default, license recorded per
-  kernel). `kaggle kernels list --language python --sort-by voteCount`
-  on classic tabular competitions (Titanic, House Prices, fraud, churn),
-  then `kaggle kernels pull`. 30–50 notebooks.
-- Run `wald check` over all of them; hand-review every flag.
-- Write the FP/miss report to `evals/` (dated, same format).
-- Expected gaps to fix afterwards:
-  - leakage detector must NOT flag sklearn `Pipeline` /
-    `ColumnTransformer` (the correct pattern) and must understand
-    `KFold` / `cross_val_score` splits,
-  - parse robustness beyond `_strip_magics` (shell lines, cell magics).
-- Publishing rule: aggregates only, never named authors.
+## 2. M2 — LLM narrative layer (blocked on API key + ~$150 budget)
 
-## 2. Fold reviewed real notebooks into the corpus
-
-Passing notebooks become licensed clean-corpus entries (record license
-per file in MANIFEST). Mutations apply via existing `applicable()`
-checks; where they don't apply, generalize the mutation, not the
-notebook. This shrinks the "synthetic-only" caveat in README.
-
-## 3. M2 — LLM narrative layer (blocked on API key + ~$150 budget)
-
-The signature move: fusion. Static survivorship candidate (conf 0.55)
-+ narrative population claim = high-confidence flag.
+Unchanged plan, one addition from the dogfood data: the contested pre-CV
+unsupervised fits (candidates at 0.75) are now a third fusion input
+besides survivorship — narrative claims about CV scores + static pre-CV
+fit candidate = confident flag.
 
 - Layer B detector: claims vs. code consistency, closed taxonomy,
   prompt generated from `flaws.yaml`, structured output, two mandatory
@@ -45,14 +36,15 @@ The signature move: fusion. Static survivorship candidate (conf 0.55)
   significant-but-meaningless. Mutations for each exist as recipes in
   the plan (LifeOS `outputs/wald-plan.md`, Příloha A).
 
-## 4. Blogpost #1 draft (needs only what exists + step 1 numbers)
+## 3. Publish
 
-"I mutation-tested statistical malpractice" — methodology post:
-corpus-before-detector, mechanical `verify()`, confusion matrix as hero
-image, dogfood numbers for credibility. Write now, publish when repo
-goes public. The writeup is half the artifact.
+- Blogpost #1 draft is in `posts/` — final numbers are in, publish when
+  the repo goes public.
+- Pre-publication checklist: LICENSE files in `corpus/real/LICENSES/`
+  ship with the repo (Apache-2.0/MIT attribution), report stays
+  aggregate-only.
 
-## 5. Parked until the repo is public
+## 4. Parked until the repo is public
 
 - GitHub Action with PR annotations (M4) — pointless while local-only.
 - M3 table QA and severity calibration follow M2.

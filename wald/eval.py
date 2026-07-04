@@ -17,6 +17,14 @@ from .ingest import parse_notebook
 def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR) -> dict:
     root = Path(corpus_root)
     manifest = json.loads((root / "MANIFEST.json").read_text())
+    # reviewed real notebooks (corpus/real) join the clean set; wald corpus
+    # build regenerates only the synthetic MANIFEST, so they live separately
+    real_manifest = root / "real" / "MANIFEST.json"
+    n_real = 0
+    if real_manifest.exists():
+        real_clean = json.loads(real_manifest.read_text())["clean"]
+        n_real = len(real_clean)
+        manifest["clean"] = manifest["clean"] + real_clean
 
     per_class = {c: {"tp": 0, "fn": 0, "fp": 0} for c in sorted(STATIC_DECIDABLE)}
     candidate = {"selection-survivorship-cohort": {"tp": 0, "fn": 0}}
@@ -60,6 +68,7 @@ def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR) -
         "date": date.today().isoformat(),
         "corpus_built": manifest["built"],
         "n_clean": n_clean,
+        "n_clean_real": n_real,
         "n_mutants": len(manifest["mutants"]),
         "n_discarded": len(manifest["discarded"]),
         "confidence_floor": floor,
@@ -79,7 +88,9 @@ def render_report(results: dict) -> str:
     lines = [
         f"# Wald eval — {results['date']} (corpus built {results['corpus_built']})",
         "",
-        f"{results['n_clean']} clean notebooks, {results['n_mutants']} verified mutants "
+        f"{results['n_clean']} clean notebooks "
+        f"({results.get('n_clean_real', 0)} real, reviewed; rest synthetic), "
+        f"{results['n_mutants']} verified mutants "
         f"({results['n_discarded']} discarded at build), confidence floor "
         f"{results['confidence_floor']}.",
         "",
@@ -109,9 +120,10 @@ def render_report(results: dict) -> str:
     lines += [
         "",
         "## Honest caveats",
-        "- The corpus is synthetic and stereotypical by design (v1); these "
-        "numbers measure detector correctness on canonical idioms, not "
-        "real-world recall. Dogfooding on real notebooks is milestone M4.",
+        "- Mutants are injected only into the synthetic notebooks, so recall "
+        "is measured on canonical idioms. Real notebooks contribute to the "
+        "clean FP rate only; real-flaw recall rests on the 7 confirmed "
+        "instances in the dogfood report (too few for a recall number).",
         "- Survivorship is reported as candidate recall only — the static "
         "half cannot decide it (the flaw is the pair filter+claim).",
     ]

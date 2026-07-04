@@ -1,19 +1,34 @@
 """Name-level def-use analysis over notebook code cells (libcst).
 
-Deliberately not a full abstract interpretation: names are tracked
-conservatively (dependencies union across reassignments), which is enough
-for the stereotypical pandas/sklearn idioms v1 targets and errs toward
-flagging (see README "what Wald doesn't see").
+Deliberately not a full abstract interpretation: bindings follow document
+order (the notebook's v1 linear-execution assumption) with kill-on-reassign,
+which is what the 2026-07-04 dogfood review showed real notebooks need.
+Known blind spots, accepted for v1: conditional rebinds (`if demo: X = ...`)
+kill the chain like unconditional ones, and code inside function bodies is
+not modeled as notebook-level bindings.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 
 from .ingest import ParsedNotebook
+
+# a magic/shell line is %name, %%name or !cmd — never "% b)" (formatting
+# continuation) or "!= x"
+_MAGIC_RE = re.compile(r"^(%%?[A-Za-z]|![A-Za-z./~])")
+
+# cell magics whose body is not Python; anything else that fails to parse
+# is a real parse error and must be recorded
+_NON_PYTHON_CELL_MAGICS = {
+    "%%writefile", "%%file", "%%bash", "%%sh", "%%script", "%%cmd",
+    "%%html", "%%javascript", "%%js", "%%latex", "%%markdown", "%%svg",
+    "%%perl", "%%ruby",
+}
 
 
 def expr_names(node: cst.CSTNode) -> set[str]:
@@ -38,12 +53,26 @@ def expr_names(node: cst.CSTNode) -> set[str]:
     return names
 
 
+def _subscript_key(node: cst.Subscript) -> str:
+    """A stable label for a subscript: literal keys keep their value so
+    models['clf'] and models['scaler'] stay distinct receivers; dynamic
+    keys become '?' (consumers treat those as unresolvable)."""
+    if len(node.slice) == 1 and isinstance(node.slice[0].slice, cst.Index):
+        v = node.slice[0].slice.value
+        if isinstance(v, (cst.SimpleString, cst.Integer)):
+            return v.value
+    return "?"
+
+
 def _dotted(node: cst.BaseExpression) -> str | None:
     if isinstance(node, cst.Name):
         return node.value
     if isinstance(node, cst.Attribute):
         base = _dotted(node.value)
         return f"{base}.{node.attr.value}" if base else None
+    if isinstance(node, cst.Subscript):
+        base = _dotted(node.value)
+        return f"{base}[{_subscript_key(node)}]" if base else None
     return None
 
 
@@ -52,10 +81,22 @@ class CallSite:
     func: str  # dotted, e.g. "scaler.fit_transform" or "train_test_split"
     name: str  # final segment, e.g. "fit_transform"
     receiver: str | None  # "scaler" for scaler.fit_transform, None for bare calls
-    arg_names: set[str]  # names read by positional/keyword args
     cell: int
     line: int  # 1-based within the cell
     loop_depth: int
+    pos_args: list[set[str]] = field(default_factory=list)  # names per positional arg
+    kw_args: dict[str, set[str]] = field(default_factory=dict)  # names per keyword arg
+
+    @property
+    def arg_names(self) -> set[str]:
+        return set().union(set(), *self.pos_args, *self.kw_args.values())
+
+    @property
+    def receiver_base(self) -> str | None:
+        """Plain variable underneath the receiver: data['a'] -> data."""
+        if self.receiver is None:
+            return None
+        return self.receiver.split("[", 1)[0].split(".", 1)[0]
 
 
 @dataclass
@@ -64,7 +105,7 @@ class AssignEvent:
     sources: set[str]
     cell: int
     line: int
-    call: CallSite | None = None  # set when the assigned value is a call
+    call: CallSite | None = None  # the exact CallSite object when the value is a call
 
 
 class _CellVisitor(cst.CSTVisitor):
@@ -73,8 +114,10 @@ class _CellVisitor(cst.CSTVisitor):
     def __init__(self, cell_index: int):
         self.cell = cell_index
         self.loop_depth = 0
+        self.scope_depth = 0  # inside def/lambda/class: not notebook-level bindings
         self.calls: list[CallSite] = []
         self.assigns: list[AssignEvent] = []
+        self._pending: dict[int, AssignEvent] = {}  # id(call node) -> its assign event
 
     def _line(self, node: cst.CSTNode) -> int:
         return self.get_metadata(PositionProvider, node).start.line
@@ -91,62 +134,81 @@ class _CellVisitor(cst.CSTVisitor):
     def leave_While(self, node: cst.While) -> None:
         self.loop_depth -= 1
 
-    def visit_Call(self, node: cst.Call) -> None:
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self.scope_depth += 1
+
+    def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self.scope_depth -= 1
+
+    def visit_Lambda(self, node: cst.Lambda) -> None:
+        self.scope_depth += 1
+
+    def leave_Lambda(self, node: cst.Lambda) -> None:
+        self.scope_depth -= 1
+
+    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+        self.scope_depth += 1
+
+    def leave_ClassDef(self, node: cst.ClassDef) -> None:
+        self.scope_depth -= 1
+
+    def _call_site(self, node: cst.Call, line: int) -> CallSite | None:
         dotted = _dotted(node.func)
         if dotted is None:
-            return
+            return None
         receiver = None
-        if isinstance(node.func, cst.Attribute):
+        if isinstance(node.func, (cst.Attribute, cst.Subscript)):
             receiver = _dotted(node.func.value)
-        args: set[str] = set()
+        pos_args: list[set[str]] = []
+        kw_args: dict[str, set[str]] = {}
         for arg in node.args:
-            args |= expr_names(arg.value)
-        self.calls.append(
-            CallSite(
-                func=dotted,
-                name=dotted.rsplit(".", 1)[-1],
-                receiver=receiver,
-                arg_names=args,
-                cell=self.cell,
-                line=self._line(node),
-                loop_depth=self.loop_depth,
-            )
+            names = expr_names(arg.value)
+            if arg.keyword is not None:
+                kw_args[arg.keyword.value] = names
+            else:
+                pos_args.append(names)
+        return CallSite(
+            func=dotted,
+            name=dotted.rsplit(".", 1)[-1].split("[", 1)[0],
+            receiver=receiver,
+            cell=self.cell,
+            line=line,
+            loop_depth=self.loop_depth,
+            pos_args=pos_args,
+            kw_args=kw_args,
         )
 
-    def _record_assign(self, targets: set[str], value: cst.BaseExpression, node: cst.CSTNode) -> None:
-        call = None
-        if isinstance(value, cst.Call):
-            # the visitor also sees this call via visit_Call; link the same info
-            dotted = _dotted(value.func)
-            if dotted is not None:
-                receiver = _dotted(value.func.value) if isinstance(value.func, cst.Attribute) else None
-                args: set[str] = set()
-                for arg in value.args:
-                    args |= expr_names(arg.value)
-                call = CallSite(
-                    func=dotted,
-                    name=dotted.rsplit(".", 1)[-1],
-                    receiver=receiver,
-                    arg_names=args,
-                    cell=self.cell,
-                    line=self._line(node),
-                    loop_depth=self.loop_depth,
-                )
-        self.assigns.append(
-            AssignEvent(
-                targets=targets,
-                sources=expr_names(value),
-                cell=self.cell,
-                line=self._line(node),
-                call=call,
-            )
+    def visit_Call(self, node: cst.Call) -> None:
+        site = self._call_site(node, self._line(node))
+        if site is None:
+            return
+        self.calls.append(site)
+        ev = self._pending.pop(id(node), None)
+        if ev is not None:
+            ev.call = site  # identity-shared: detect can test `ev.call is call`
+
+    def _record_assign(self, targets: set[str], value: cst.BaseExpression, node: cst.CSTNode,
+                       extra_sources: set[str] = frozenset()) -> None:
+        if self.scope_depth > 0:
+            return  # function/class locals do not rebind notebook names
+        ev = AssignEvent(
+            targets=targets,
+            sources=expr_names(value) | set(extra_sources),
+            cell=self.cell,
+            line=self._line(node),
         )
+        self.assigns.append(ev)
+        if isinstance(value, cst.Call):
+            self._pending[id(value)] = ev
 
     def visit_Assign(self, node: cst.Assign) -> None:
         targets: set[str] = set()
+        mutated: set[str] = set()  # df["x"] = ... mutates df: keep df's history
         for t in node.targets:
+            if isinstance(t.target, (cst.Subscript, cst.Attribute)):
+                mutated |= _target_names(t.target)
             targets |= _target_names(t.target)
-        self._record_assign(targets, node.value, node)
+        self._record_assign(targets, node.value, node, extra_sources=mutated)
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if node.value is not None:
@@ -154,7 +216,7 @@ class _CellVisitor(cst.CSTVisitor):
 
     def visit_AugAssign(self, node: cst.AugAssign) -> None:
         targets = _target_names(node.target)
-        self._record_assign(targets, node.value, node)
+        self._record_assign(targets, node.value, node, extra_sources=targets)
 
 
 def _target_names(node: cst.BaseExpression) -> set[str]:
@@ -167,15 +229,16 @@ def _target_names(node: cst.BaseExpression) -> set[str]:
         return names
     if isinstance(node, (cst.Subscript, cst.Attribute)):
         # df["x"] = ... mutates df; treat df as (re)assigned
-        return _target_names(node.value) if not isinstance(node, cst.Attribute) else _target_names(node.value)
+        return _target_names(node.value)
     return set()
 
 
 def _strip_magics(source: str) -> str:
     lines = []
     for line in source.splitlines():
-        if line.lstrip().startswith(("%", "!")):
-            lines.append("pass  # magic stripped")
+        stripped = line.lstrip()
+        if _MAGIC_RE.match(stripped):
+            lines.append(line[: len(line) - len(stripped)] + "pass  # magic stripped")
         else:
             lines.append(line)
     return "\n".join(lines)
@@ -185,35 +248,69 @@ def _strip_magics(source: str) -> str:
 class NotebookDataflow:
     calls: list[CallSite] = field(default_factory=list)
     assigns: list[AssignEvent] = field(default_factory=list)
-    deps: dict[str, set[str]] = field(default_factory=dict)  # name -> names it was derived from
     parse_errors: list[int] = field(default_factory=list)  # cell indices that failed to parse
+    _by_name: dict[str, list[AssignEvent]] | None = field(default=None, repr=False)
 
-    def ancestors(self, names: set[str]) -> set[str]:
-        """Transitive closure of deps: every name the given names derive from."""
-        seen: set[str] = set()
-        frontier = set(names)
+    def last_assign(self, name: str, before: tuple[int, int]) -> AssignEvent | None:
+        """Latest assignment to `name` strictly before (cell, line), in
+        document order — the notebook's v1 linear-execution assumption."""
+        if self._by_name is None:
+            self._by_name = {}
+            for ev in self.assigns:
+                for t in ev.targets:
+                    self._by_name.setdefault(t, []).append(ev)
+        for ev in reversed(self._by_name.get(name, [])):
+            if (ev.cell, ev.line) < before:
+                return ev
+        return None
+
+    def chain(self, names: set[str], at: tuple[int, int]) -> tuple[list[AssignEvent], set[tuple[str, int | None]]]:
+        """Flow-sensitive dependency chain: the assign events and
+        (name, binding-event-id) pairs reachable from `names` as bound at
+        position `at`. A name rebound between its producer and `at` kills
+        the older chain — reusing `X` for a second dataset no longer links
+        the two."""
+        events: list[AssignEvent] = []
+        bindings: set[tuple[str, int | None]] = set()
+        frontier: list[tuple[str, tuple[int, int]]] = [(n, at) for n in names]
         while frontier:
-            n = frontier.pop()
-            if n in seen:
+            n, pos = frontier.pop()
+            ev = self.last_assign(n, pos)
+            key = (n, id(ev) if ev is not None else None)
+            if key in bindings:
                 continue
-            seen.add(n)
-            frontier |= self.deps.get(n, set()) - seen
-        return seen
+            bindings.add(key)
+            if ev is None:
+                continue
+            events.append(ev)
+            for s in ev.sources:
+                frontier.append((s, (ev.cell, ev.line)))
+        return events, bindings
+
+    def binding(self, name: str, at: tuple[int, int]) -> tuple[str, int | None]:
+        ev = self.last_assign(name, at)
+        return (name, id(ev) if ev is not None else None)
 
 
 def analyze(nb: ParsedNotebook) -> NotebookDataflow:
     flow = NotebookDataflow()
     for cell in nb.code_cells:
+        # valid Python first: a leading "%" can be a formatting continuation
+        # line, not a magic, and stripping it would break the parse
         try:
-            wrapper = MetadataWrapper(cst.parse_module(_strip_magics(cell.source)))
+            module = cst.parse_module(cell.source)
         except cst.ParserSyntaxError:
-            flow.parse_errors.append(cell.index)
-            continue
+            try:
+                module = cst.parse_module(_strip_magics(cell.source))
+            except cst.ParserSyntaxError:
+                first_word = cell.source.lstrip().split(None, 1)[0] if cell.source.strip() else ""
+                if first_word in _NON_PYTHON_CELL_MAGICS:
+                    continue  # body is not Python by design; not an error
+                flow.parse_errors.append(cell.index)
+                continue
+        wrapper = MetadataWrapper(module)
         visitor = _CellVisitor(cell.index)
         wrapper.visit(visitor)
         flow.calls.extend(visitor.calls)
         flow.assigns.extend(visitor.assigns)
-        for ev in visitor.assigns:
-            for t in ev.targets:
-                flow.deps.setdefault(t, set()).update(ev.sources - {t})
     return flow
