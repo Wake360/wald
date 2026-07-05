@@ -421,6 +421,7 @@ def run_llm_eval(corpus_root: str | Path, det_backend, ver_backend,
     results = evaluate_narrative(corpus_root, det_backend, ver_backend, split=split)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"{results['date']}-llm-eval.json").write_text(json.dumps(results, indent=2))
-    (out / f"{results['date']}-llm-eval.md").write_text(render_llm_report(results))
+    stem = f"{results['date']}-llm-eval-{results['split']}"
+    (out / f"{stem}.json").write_text(json.dumps(results, indent=2))
+    (out / f"{stem}.md").write_text(render_llm_report(results))
     return results

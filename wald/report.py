@@ -1,14 +1,17 @@
-"""Flag rendering (markdown + JSON) and exit-code policy."""
+"""Flag rendering (markdown + JSON + SARIF) and exit-code policy."""
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
+import os
 from dataclasses import asdict
 
 from .detect import DEFAULT_CONFIDENCE_FLOOR, Flag
 from .taxonomy import load_taxonomy
 
 SEVERITY_ORDER = {"info": 0, "medium": 1, "high": 2}
+SARIF_LEVEL = {"high": "error", "medium": "warning"}
 
 
 def exit_code(flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
@@ -101,3 +104,66 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
         lines.append(f"## CLEAN (checked): {', '.join(clean)}")
         lines.append("")
     return "\n".join(lines)
+
+
+def to_sarif(entries: list[tuple[str, list[Flag]]], floor: float = DEFAULT_CONFIDENCE_FLOOR) -> str:
+    """One SARIF 2.1.0 log covering every notebook checked in this invocation."""
+    taxonomy = load_taxonomy()
+    try:
+        version = importlib.metadata.version("wald-lint")
+    except importlib.metadata.PackageNotFoundError:
+        version = "unknown"
+
+    rules = [
+        {
+            "id": flaw_id,
+            "shortDescription": {"text": d.definition.split(". ")[0].rstrip(".").strip() + "."},
+            "fullDescription": {"text": d.definition},
+            "help": {"text": d.fix},
+        }
+        for flaw_id, d in sorted(taxonomy.items())
+    ]
+
+    results = []
+    candidates = []
+    for path, flags in entries:
+        uri = os.path.relpath(path)
+        for f in flags:
+            if f.confidence < floor:
+                candidates.append({
+                    "ruleId": f.flaw_id, "notebook": uri, "cell": f.cell, "line": f.line,
+                    "confidence": f.confidence, "evidence": f.evidence,
+                })
+                continue
+            message = (f"{f.evidence} | Failure: {f.failure_scenario} | "
+                       f"Fix: {f.fix} (cell {f.cell}, line {f.line})")
+            results.append({
+                "ruleId": f.flaw_id,
+                "level": SARIF_LEVEL.get(f.severity, "note"),
+                "message": {"text": message},
+                "locations": [{
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": uri},
+                        "region": {"startLine": f.line},
+                    },
+                }],
+                "properties": {"cell": f.cell, "confidence": f.confidence},
+            })
+
+    sarif = {
+        "version": "2.1.0",
+        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "wald",
+                    "informationUri": "https://github.com/Wake360/wald",
+                    "version": version,
+                    "rules": rules,
+                },
+            },
+            "results": results,
+            "properties": {"candidates": candidates},
+        }],
+    }
+    return json.dumps(sarif, indent=2)

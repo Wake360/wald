@@ -3,7 +3,8 @@ from pathlib import Path
 
 from wald.cli import main
 from wald.detect import Flag
-from wald.report import exit_code, parse_warning, to_json, to_markdown
+from wald.report import exit_code, parse_warning, to_json, to_markdown, to_sarif
+from wald.taxonomy import load_taxonomy
 
 LEAKY = str(Path(__file__).parent.parent / "examples" / "leaky.ipynb")
 
@@ -56,6 +57,14 @@ def test_cli_llm_without_keys_exits_3(monkeypatch, capsys):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     assert main(["check", "--llm", LEAKY]) == 3
+    err = capsys.readouterr().err
+    assert "ANTHROPIC_API_KEY" in err and "OPENAI_API_KEY" in err
+
+
+def test_cli_eval_llm_without_keys_exits_3(monkeypatch, capsys):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert main(["eval", "--llm"]) == 3
     err = capsys.readouterr().err
     assert "ANTHROPIC_API_KEY" in err and "OPENAI_API_KEY" in err
 
@@ -142,3 +151,58 @@ def test_definition_bullet_labeled_flaw():
     md = to_markdown("nb.ipynb", [flag()])
     assert "- **Flaw:**" in md
     assert "Why it matters" not in md
+
+
+def test_sarif_structure():
+    sarif = json.loads(to_sarif([("nb.ipynb", [flag()])]))
+    assert sarif["version"] == "2.1.0"
+    assert len(sarif["runs"]) == 1
+    driver = sarif["runs"][0]["tool"]["driver"]
+    assert driver["name"] == "wald"
+    assert driver["informationUri"] == "https://github.com/Wake360/wald"
+    assert driver["version"]  # non-empty, from package metadata
+
+
+def test_sarif_rule_table_completeness():
+    sarif = json.loads(to_sarif([("nb.ipynb", [])]))
+    rules = {r["id"]: r for r in sarif["runs"][0]["tool"]["driver"]["rules"]}
+    taxonomy = load_taxonomy()
+    assert set(rules) == set(taxonomy)
+    for flaw_id, d in taxonomy.items():
+        assert rules[flaw_id]["fullDescription"]["text"] == d.definition
+        assert rules[flaw_id]["help"]["text"] == d.fix
+        assert d.definition.startswith(rules[flaw_id]["shortDescription"]["text"].rstrip("."))
+
+
+def test_sarif_level_mapping():
+    high = flag()
+    medium = flag("testing-multiple-uncorrected", "medium")
+    sarif = json.loads(to_sarif([("nb.ipynb", [high, medium])]))
+    levels = {r["ruleId"]: r["level"] for r in sarif["runs"][0]["results"]}
+    assert levels["leakage-fit-before-split"] == "error"
+    assert levels["testing-multiple-uncorrected"] == "warning"
+
+
+def test_sarif_candidate_exclusion():
+    cand = flag(confidence=0.55)
+    sarif = json.loads(to_sarif([("nb.ipynb", [cand])]))
+    run = sarif["runs"][0]
+    assert run["results"] == []
+    assert len(run["properties"]["candidates"]) == 1
+    assert run["properties"]["candidates"][0]["ruleId"] == "leakage-fit-before-split"
+
+
+def test_sarif_multi_notebook_single_log():
+    sarif = json.loads(to_sarif([("a.ipynb", [flag()]), ("b.ipynb", [flag()])]))
+    assert len(sarif["runs"]) == 1
+    uris = {r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]
+            for r in sarif["runs"][0]["results"]}
+    assert uris == {"a.ipynb", "b.ipynb"}
+
+
+def test_sarif_result_fields():
+    sarif = json.loads(to_sarif([("nb.ipynb", [flag()])]))
+    r = sarif["runs"][0]["results"][0]
+    assert r["message"]["text"] == "ev | Failure: fs | Fix: fx (cell 5, line 2)"
+    assert r["locations"][0]["physicalLocation"]["region"]["startLine"] == 2
+    assert r["properties"] == {"cell": 5, "confidence": 0.92}

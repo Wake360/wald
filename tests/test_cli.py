@@ -41,6 +41,18 @@ def test_version_short_flag(capsys):
     assert capsys.readouterr().out.startswith("wald ")
 
 
+def test_format_sarif_accepted_and_valid_json(tmp_path, capsys):
+    nb = {"cells": [
+        {"cell_type": "code", "source": "x = 1\n", "outputs": [],
+         "execution_count": None, "metadata": {}},
+    ], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}
+    p = _write(tmp_path, "clean.ipynb", json.dumps(nb))
+    rc = main(["check", "--format", "sarif", p])
+    data = json.loads(capsys.readouterr().out)  # must be a single valid JSON document
+    assert data["version"] == "2.1.0"
+    assert rc == 0
+
+
 def test_heldout_refusal_has_prefix_and_exits_3(tmp_path, capsys):
     (tmp_path / "clean").mkdir()
     (tmp_path / "clean" / "foo.ipynb").write_text(

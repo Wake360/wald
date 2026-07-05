@@ -115,4 +115,4 @@ high-severity findings. The narrative layer — checking prose claims
 against what the code computes — came next, measured the same way,
 because by then there was something honest to measure it against.
 
-The code is at github.com/filipvachek/wald.
+The code is at github.com/Wake360/wald.

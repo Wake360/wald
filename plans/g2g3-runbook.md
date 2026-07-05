@@ -47,15 +47,12 @@ Sources: `plans/m2.md` (gates, cost ledger, iteration budget, R3),
   before every `wald eval --llm` (steps 2 and 4) confirm both env vars
   yourself: `test -n "$ANTHROPIC_API_KEY" && test -n "$OPENAI_API_KEY" &&
   echo keys-ok`.
-- Gotcha: **report filenames collide.** `run_llm_eval` writes
-  `evals/<date>-llm-eval.json`/`.md` with the date only — no split, no
-  attempt number. A second `wald eval --llm` on the same day silently
-  overwrites the first. On the day the keys arrive you will run several
-  evals in one day, so the dev checkpoint report gets clobbered by the
-  held-out report, and you lose the dev recall you need for the R3 gap
-  (STOP 2). After every eval run, immediately rename both files to a
-  split/attempt-tagged name before running the next one (commands inline
-  in steps 2 and 4).
+- Gotcha: **report filenames carry the split.** `run_llm_eval` writes
+  `evals/<date>-llm-eval-<split>.json`/`.md`, so a same-day dev run and
+  held-out run no longer collide. Two held-out attempts on the same day
+  still share one filename, though — after each held-out run (step 4),
+  rename immediately to an attempt-tagged name before running the next
+  attempt (command inline in step 4).
 
 ## 1. Command sequence
 
@@ -91,18 +88,18 @@ before trusting the OpenAI path.
 ```
 test -n "$ANTHROPIC_API_KEY" && test -n "$OPENAI_API_KEY" && echo keys-ok || echo MISSING-KEY-STOP
 wald eval --llm --split dev --corpus corpus --out evals
-# rename immediately so the held-out run (same day) cannot overwrite it,
-# and bump ckpt1 -> ckpt2 on the second checkpoint:
-mv "evals/$(date +%F)-llm-eval.json" "evals/$(date +%F)-llm-eval-dev-ckpt1.json"
-mv "evals/$(date +%F)-llm-eval.md"   "evals/$(date +%F)-llm-eval-dev-ckpt1.md"
+# filename already carries the split (evals/<date>-llm-eval-dev.json/.md);
+# tag it with the checkpoint number so a second dev checkpoint doesn't clobber it:
+mv "evals/$(date +%F)-llm-eval-dev.json" "evals/$(date +%F)-llm-eval-dev-ckpt1.json"
+mv "evals/$(date +%F)-llm-eval-dev.md"   "evals/$(date +%F)-llm-eval-dev-ckpt1.md"
 ```
 
 Run the key check first — `wald eval --llm` will not stop for a missing
 key on its own (see Prerequisites). No `--replay-dir` — this is the real
 API dev checkpoint the plan requires before further spend. The eval writes
-the date-only `evals/<date>-llm-eval.json`/`.md`; rename it at once
-(commands above) because the held-out attempt writes the same filename and
-would otherwise clobber this dev evidence.
+`evals/<date>-llm-eval-dev.json`/`.md` (split already in the name, so it
+cannot collide with the held-out attempt's filename); rename it at once
+(commands above) only to disambiguate a second same-day dev checkpoint.
 
 This single command produces both the G2 numbers (per-class F1, clean FP
 rate, `dropped_ungrounded`) **and** the G3 numbers (`g3_per_recipe`,
@@ -160,10 +157,12 @@ grep -E 'PINNED_(DETECTOR|VERIFIER)_MODEL' wald/llm.py
 
 ```
 wald eval --llm --split heldout --corpus corpus --out evals
-# rename immediately (date-only filename collides with the dev report and
-# with the other attempt); bump attempt1 -> attempt2 on the second run:
-mv "evals/$(date +%F)-llm-eval.json" "evals/$(date +%F)-llm-eval-heldout-attempt1.json"
-mv "evals/$(date +%F)-llm-eval.md"   "evals/$(date +%F)-llm-eval-heldout-attempt1.md"
+# filename already carries the split (evals/<date>-llm-eval-heldout.json/.md),
+# so it can't collide with the dev report; rename immediately so a second
+# held-out attempt on the same day doesn't clobber this one — bump
+# attempt1 -> attempt2 on the second run:
+mv "evals/$(date +%F)-llm-eval-heldout.json" "evals/$(date +%F)-llm-eval-heldout-attempt1.json"
+mv "evals/$(date +%F)-llm-eval-heldout.md"   "evals/$(date +%F)-llm-eval-heldout-attempt1.md"
 ```
 
 No `--replay-dir`, no agent backend — `evaluate_narrative` raises if
@@ -263,8 +262,8 @@ dollar figure — the ledger says so explicitly.
 - Step 1: `evals/llm-fixtures/smoke/detector/*.json`,
   `evals/llm-fixtures/smoke/verifier/*.json` exist; smoke notebook's
   check output (flag/candidate/none).
-- Step 2 (each checkpoint): `evals/<date>-llm-eval.json` +
-  `evals/<date>-llm-eval.md`; `narrative_classes` per-class recall/F1;
+- Step 2 (each checkpoint): `evals/<date>-llm-eval-dev.json` +
+  `evals/<date>-llm-eval-dev.md`; `narrative_classes` per-class recall/F1;
   `clean_fp_rate`; `dropped_ungrounded.rate`; `gate_evidence` (expect
   `true` here too — flag it as dev, not gate, per STOP 3); `usage`
   totals for cost tracking.

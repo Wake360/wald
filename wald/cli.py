@@ -14,7 +14,7 @@ from nbformat.reader import NotJSONError
 from .dataflow import analyze
 from .detect import DEFAULT_CONFIDENCE_FLOOR, run_static
 from .ingest import parse_notebook
-from .report import exit_code, parse_warning, report_obj, to_markdown
+from .report import exit_code, parse_warning, report_obj, to_markdown, to_sarif
 
 # environment variable each api backend needs before it can make a request
 _KEY_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
@@ -95,6 +95,7 @@ def cmd_check(args) -> int:
                   file=sys.stderr)
             return 3
     reports = []
+    sarif_entries = []
     worst = 0
     for path in args.notebooks:
         if args.llm:
@@ -112,12 +113,16 @@ def cmd_check(args) -> int:
         warning = parse_warning(len(flow.parse_errors), len(nb.code_cells))
         if args.format == "json":
             reports.append(report_obj(path, flags, args.floor, args.severity_gate, warning))
+        elif args.format == "sarif":
+            sarif_entries.append((path, flags))
         else:
             print(to_markdown(path, flags, args.floor, warning))
         worst = max(worst, exit_code(flags, args.floor, args.severity_gate))
     if args.format == "json":
         # one bare object for a single notebook (back-compat), an array for many
         print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
+    elif args.format == "sarif":
+        print(to_sarif(sarif_entries, args.floor))
     return worst
 
 
@@ -126,8 +131,13 @@ def cmd_eval(args) -> int:
         from .eval import run_llm_eval
 
         det, ver = _llm_backends(args.replay_dir)
+        missing = _missing_llm_keys(det, ver)
+        if missing:
+            print(f"wald: --llm needs {' and '.join(missing)} set in the environment",
+                  file=sys.stderr)
+            return 3
         results = run_llm_eval(args.corpus, det, ver, split=args.split, out_dir=args.out)
-        print(f"llm eval written to {args.out}/{results['date']}-llm-eval.md")
+        print(f"llm eval written to {args.out}/{results['date']}-llm-eval-{results['split']}.md")
         for c, r in results["narrative_classes"].items():
             f1 = f"{r['f1']:.2f}" if r["f1"] is not None else "—"
             print(f"  {c}: F1 {f1}")
@@ -172,8 +182,9 @@ def main(argv=None) -> int:
         epilog="exit codes: 0 clean, 1 medium, 2 high, 3 input or usage error",
     )
     p_check.add_argument("notebooks", nargs="+")
-    p_check.add_argument("--format", choices=["md", "json"], default="md",
-                         help="json emits one object for a single notebook, a JSON array for several")
+    p_check.add_argument("--format", choices=["md", "json", "sarif"], default="md",
+                         help="json emits one object for a single notebook, a JSON array for "
+                              "several; sarif emits one SARIF 2.1.0 log for the whole invocation")
     p_check.add_argument("--floor", type=float, default=DEFAULT_CONFIDENCE_FLOOR,
                          help="confidence floor in [0, 1] (default: %(default)s); findings below "
                               "it move to Candidates instead of Flags")

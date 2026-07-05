@@ -43,9 +43,9 @@ dev = ["pytest>=8.0"]
 wald = "wald.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/filipvachek/wald"
-Repository = "https://github.com/filipvachek/wald"
-Issues = "https://github.com/filipvachek/wald/issues"
+Homepage = "https://github.com/Wake360/wald"
+Repository = "https://github.com/Wake360/wald"
+Issues = "https://github.com/Wake360/wald/issues"
 
 [tool.setuptools.packages.find]
 include = ["wald*"]
