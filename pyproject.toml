@@ -8,7 +8,20 @@ version = "0.1.0"
 description = "Statistical-integrity linter: flags survivorship bias, leakage, multiple testing and other inference flaws in notebooks — every flag with evidence, failure scenario and fix."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+authors = [{ name = "Filip Vachek", email = "filip.vachek@gmail.com" }]
+keywords = ["linter", "notebook", "data-leakage", "statistics", "reproducibility", "jupyter"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "libcst>=1.0",
     "nbformat>=5.9",
@@ -28,6 +41,11 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 wald = "wald.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/filipvachek/wald"
+Repository = "https://github.com/filipvachek/wald"
+Issues = "https://github.com/filipvachek/wald/issues"
 
 [tool.setuptools.packages.find]
 include = ["wald*"]

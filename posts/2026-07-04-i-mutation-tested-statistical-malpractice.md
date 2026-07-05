@@ -1,7 +1,5 @@
 # I mutation-tested statistical malpractice
 
-*Draft — publish when the repo goes public.*
-
 I built a linter for statistical malpractice in notebooks: train/test
 leakage, uncorrected multiple testing, survivorship bias, accuracy brags
 on imbalanced classes. On its own eval suite it scored precision 1.00.
@@ -100,19 +98,21 @@ failures went from 13 cells to 0. The synthetic gates stayed at 1.00;
 the fix cost nothing on the mutants.
 
 The run paid twice. 27 of the 34 notebooks reviewed clean and entered
-the corpus as licensed real entries, so the clean false-positive rate is
-now measured over 47 files, and the next detector change gets caught by
-real code instead of my own synthetic idioms. The honest limit: recall
-on real flaws rests on 7 confirmed instances so far, too few to quote as
-a number.
+the corpus as licensed real entries, so the clean false-positive rate
+was, at that point, measured over 47 files, and every detector change
+since gets caught by real code instead of my own synthetic idioms. The
+honest limit: recall on real flaws rested on 7 confirmed instances at
+the time, too few to quote as a number.
 
 None of this is specific to statistics. The loop works for any detector
 project, and its most valuable output to date is the labeled list of its
 own failures.
 
 The tool is called wald, after Abraham Wald, who armored the bullet
-holes that weren't in the returning planes. Static layer only for now:
-no LLM, no API key, runs in CI, exit code 2 on high-severity findings.
-Next is the narrative layer, checking prose claims against what the code
-computes. It will be measured the same way, because now there is
-something honest to measure it against.
+holes that weren't in the returning planes. At the time of this story it
+was static layer only: no LLM, no API key, runs in CI, exit code 2 on
+high-severity findings. The narrative layer — checking prose claims
+against what the code computes — came next, measured the same way,
+because by then there was something honest to measure it against.
+
+The code is at github.com/filipvachek/wald.

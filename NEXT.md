@@ -6,7 +6,7 @@ rebuilt from the review data — flow-sensitive dataflow, transformer vs.
 estimator, CV sinks, imputation pattern. After: 3 confident flags on the
 same set, all confirmed real, 0 known FPs, parse errors 0. 27 reviewed
 clean notebooks folded into `corpus/real/` with licenses; clean corpus is
-now 47 files at 0.0% FP. 47 tests. Full story: `evals/2026-07-04-dogfood.md`.
+now 75 notebooks (27 real, 48 synthetic) at 0.0% FP. 207 tests. Full story: `evals/2026-07-04-dogfood.md`.
 Blogpost #1 drafted (`posts/`). Repo still local-only.
 
 ## 1. Widen the dogfood set (no key, incremental)
