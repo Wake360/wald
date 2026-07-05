@@ -188,9 +188,10 @@ haven't run yet), so none of these recipes catch them. The full, versioned
 list of what Wald checks lives in `wald/taxonomy/flaws.yaml`.
 
 On measured quality: mutation testing gives precision 1.00 and recall 1.00
-on `leakage-fit-before-split` (24 mutants), `testing-multiple-uncorrected`
-(96 mutants), and `baserate-accuracy-imbalanced` (8 mutants), with a 0.0%
-false-positive rate on the 75-notebook clean corpus. Dogfooding on 34 real
+on `leakage-fit-before-split` (24 mutants), `leakage-temporal-shuffle`
+(16 mutants), `testing-multiple-uncorrected` (96 mutants), and
+`baserate-accuracy-imbalanced` (8 mutants), with a 0.0%
+false-positive rate on the 83-notebook clean corpus. Dogfooding on 34 real
 notebooks went through one failed iteration — the first pass flagged 50%
 of files, 119 of 124 flags false positives — before the detector was
 rebuilt (flow-sensitive dataflow, transformer/estimator distinction,

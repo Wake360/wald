@@ -12,6 +12,7 @@ from wald.corpus import (
     abtest_notebook,
     churn_notebook,
     cohort_notebook,
+    forecast_notebook,
     fraud_notebook,
     program_notebook,
 )
@@ -25,6 +26,7 @@ from wald.mutate import (
     RegressionToMeanMutation,
     SignificanceMeaninglessMutation,
     SurvivorshipMutation,
+    TemporalShuffleMutation,
     phrasing_variant,
 )
 
@@ -180,6 +182,63 @@ def test_normalize_strips_execution_and_is_serialization_stable():
     assert "execution" not in nb.cells[1]["metadata"]
     other = _normalize(churn_notebook(7), "churn-s7")  # fresh random ids pre-normalize
     assert nbformat.writes(nb) == nbformat.writes(other)
+
+
+def test_temporal_mutation_applicable_only_on_forecast_family():
+    m = TemporalShuffleMutation()
+    assert m.applicable(forecast_notebook(7))
+    for family, builder in FAMILIES.items():
+        if family == "forecast":
+            continue
+        assert not m.applicable(builder(7)), family
+
+
+def test_temporal_split_rewrite_drops_shuffle_false():
+    clean = forecast_notebook(7)
+    m = TemporalShuffleMutation()
+    mutant = m.apply(clean, 0)
+    src = mutant.cells[4]["source"]
+    assert "shuffle=False" not in src
+    assert "random_state=40" in src
+
+
+def test_temporal_cv_rewrite_installs_shuffled_kfold():
+    clean = forecast_notebook(7)
+    m = TemporalShuffleMutation()
+    mutant = m.apply(clean, 1)
+    cv_src = mutant.cells[5]["source"]
+    assert "KFold" in cv_src
+    assert "cv = TimeSeriesSplit" not in cv_src
+    assert mutant.cells[1]["source"] == clean.cells[1]["source"]
+
+
+@pytest.mark.parametrize("seed", [0, 1])
+def test_temporal_verify_each_variant(seed):
+    clean = forecast_notebook(7)
+    m = TemporalShuffleMutation()
+    mutant = m.apply(clean, seed)
+    ok, evidence = m.verify(mutant)
+    assert ok, evidence
+    assert "train_max_date" in evidence and "test_min_date" in evidence
+
+
+def test_forecast_family_is_static_silent():
+    flags = run_static(from_nbnode(forecast_notebook(7)))
+    assert flags == []
+
+
+@pytest.mark.parametrize("seed", [0, 1])
+def test_forecast_mutants_are_confidently_flagged(seed):
+    clean = forecast_notebook(7)
+    m = TemporalShuffleMutation()
+    mutant = m.apply(clean, seed)
+    ok, evidence = m.verify(mutant)
+    assert ok, evidence
+    flags = run_static(from_nbnode(mutant))
+    assert any(
+        f.flaw_id == "leakage-temporal-shuffle" and f.confidence >= DEFAULT_CONFIDENCE_FLOOR
+        for f in flags
+    ), flags
 
 
 def test_render_report_survives_zero_clean_notebooks():

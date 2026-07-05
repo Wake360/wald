@@ -33,6 +33,25 @@
     Restrict feature construction to data timestamped before the target;
     audit aggregate windows.
 
+- id: leakage-temporal-shuffle
+  class: leakage
+  layer: static
+  severity: high
+  definition: >
+    Time-ordered data whose lag, rolling-window, or resampled features
+    feed a model evaluation is split with a shuffled protocol —
+    train_test_split with default shuffle, a shuffled KFold, or
+    non-temporal cross-validation — instead of TimeSeriesSplit,
+    shuffle=False, or an explicit temporal cutoff.
+  book_anchor: "Hyndman & Athanasopoulos FPP3 §5.10 (time series cross-validation); ESL §7.10"
+  failure_scenario: >
+    Training rows sit after test rows in time, so the model is scored on
+    "predicting" a past it was trained beyond; the reported error
+    collapses when the model must forecast an actual future.
+  fix: >
+    Split by time: an explicit cutoff date, train_test_split(shuffle=False)
+    on time-sorted rows, or TimeSeriesSplit for cross-validation.
+
 - id: selection-survivorship-cohort
   class: selection
   layer: static+narrative

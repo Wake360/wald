@@ -146,6 +146,30 @@
       "split": "dev"
     },
     {
+      "file": "clean/forecast-s11.ipynb",
+      "family": "forecast",
+      "seed": 11,
+      "split": "dev"
+    },
+    {
+      "file": "clean/forecast-s12.ipynb",
+      "family": "forecast",
+      "seed": 12,
+      "split": "dev"
+    },
+    {
+      "file": "clean/forecast-s13.ipynb",
+      "family": "forecast",
+      "seed": 13,
+      "split": "dev"
+    },
+    {
+      "file": "clean/forecast-s14.ipynb",
+      "family": "forecast",
+      "seed": 14,
+      "split": "dev"
+    },
+    {
       "file": "clean/churn-s21.ipynb",
       "family": "churn",
       "seed": 21,
@@ -286,6 +310,30 @@
     {
       "file": "clean/program-s24.ipynb",
       "family": "program",
+      "seed": 24,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/forecast-s21.ipynb",
+      "family": "forecast",
+      "seed": 21,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/forecast-s22.ipynb",
+      "family": "forecast",
+      "seed": 22,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/forecast-s23.ipynb",
+      "family": "forecast",
+      "seed": 23,
+      "split": "heldout"
+    },
+    {
+      "file": "clean/forecast-s24.ipynb",
+      "family": "forecast",
       "seed": 24,
       "split": "heldout"
     }
@@ -1420,6 +1468,110 @@
       }
     },
     {
+      "file": "mutated/forecast-s11__leakage-temporal-shuffle__m0.ipynb",
+      "base": "clean/forecast-s11.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s11__leakage-temporal-shuffle__m1.ipynb",
+      "base": "clean/forecast-s11.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s12__leakage-temporal-shuffle__m0.ipynb",
+      "base": "clean/forecast-s12.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s12__leakage-temporal-shuffle__m1.ipynb",
+      "base": "clean/forecast-s12.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s13__leakage-temporal-shuffle__m0.ipynb",
+      "base": "clean/forecast-s13.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s13__leakage-temporal-shuffle__m1.ipynb",
+      "base": "clean/forecast-s13.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s14__leakage-temporal-shuffle__m0.ipynb",
+      "base": "clean/forecast-s14.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 0,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
+      "file": "mutated/forecast-s14__leakage-temporal-shuffle__m1.ipynb",
+      "base": "clean/forecast-s14.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 1,
+      "split": "dev",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-14"
+      }
+    },
+    {
       "file": "mutated/churn-s21__leakage-fit-before-split__m2.ipynb",
       "base": "clean/churn-s21.ipynb",
       "flaw_id": "leakage-fit-before-split",
@@ -2545,6 +2697,110 @@
       "evidence": {
         "effective_tests": 10,
         "correction_present": false
+      }
+    },
+    {
+      "file": "mutated/forecast-s21__leakage-temporal-shuffle__m2.ipynb",
+      "base": "clean/forecast-s21.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-16"
+      }
+    },
+    {
+      "file": "mutated/forecast-s21__leakage-temporal-shuffle__m3.ipynb",
+      "base": "clean/forecast-s21.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-24"
+      }
+    },
+    {
+      "file": "mutated/forecast-s22__leakage-temporal-shuffle__m2.ipynb",
+      "base": "clean/forecast-s22.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-16"
+      }
+    },
+    {
+      "file": "mutated/forecast-s22__leakage-temporal-shuffle__m3.ipynb",
+      "base": "clean/forecast-s22.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-24"
+      }
+    },
+    {
+      "file": "mutated/forecast-s23__leakage-temporal-shuffle__m2.ipynb",
+      "base": "clean/forecast-s23.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-16"
+      }
+    },
+    {
+      "file": "mutated/forecast-s23__leakage-temporal-shuffle__m3.ipynb",
+      "base": "clean/forecast-s23.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-24"
+      }
+    },
+    {
+      "file": "mutated/forecast-s24__leakage-temporal-shuffle__m2.ipynb",
+      "base": "clean/forecast-s24.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 2,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 0,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-16"
+      }
+    },
+    {
+      "file": "mutated/forecast-s24__leakage-temporal-shuffle__m3.ipynb",
+      "base": "clean/forecast-s24.ipynb",
+      "flaw_id": "leakage-temporal-shuffle",
+      "mutation_seed": 3,
+      "split": "heldout",
+      "verified": true,
+      "evidence": {
+        "variant": 1,
+        "train_max_date": "2025-12-30",
+        "test_min_date": "2024-01-24"
       }
     }
   ],

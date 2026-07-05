@@ -490,6 +490,88 @@ class RegressionToMeanMutation(Mutation):
         }
 
 
+class TemporalShuffleMutation(Mutation):
+    """Break temporal ordering: either randomize the train/test split or
+    swap the walk-forward CV splitter for a shuffled KFold."""
+
+    flaw_id = "leakage-temporal-shuffle"
+
+    CONCLUSION = (
+        "The model reaches the MAE and R^2 printed above on the held-out "
+        "split, with cross-validated MAE shown alongside."
+    )
+
+    def applicable(self, nb_node) -> bool:
+        m = meta(nb_node)
+        return "temporal_split_cell" in m and "temporal_cv_cell" in m and "date_col" in m
+
+    def apply(self, nb_node, seed: int):
+        m = meta(nb_node)
+        variant = seed % 2
+        if variant == 0:
+            idx = m["temporal_split_cell"]
+            src = nb_node.cells[idx]["source"]
+            if "shuffle=False" not in src:
+                raise ValueError("shuffle=False not found in temporal_split_cell")
+            new_src = src.replace("shuffle=False", f"random_state={40 + seed}")
+        else:
+            idx = m["temporal_cv_cell"]
+            src = nb_node.cells[idx]["source"]
+            if "cv = TimeSeriesSplit(n_splits=5)" not in src:
+                raise ValueError("cv = TimeSeriesSplit(n_splits=5) not found in temporal_cv_cell")
+            new_src = src.replace(
+                "cv = TimeSeriesSplit(n_splits=5)",
+                "from sklearn.model_selection import KFold\n"
+                f"cv = KFold(n_splits=5, shuffle=True, random_state={seed})",
+            )
+        nb = _replace_cell(nb_node, idx, new_src)
+        return _replace_markdown(nb, m["conclusion_cell"], self.CONCLUSION)
+
+    def verify(self, mutated_node) -> tuple[bool, dict]:
+        m = meta(mutated_node)
+        cv_src = mutated_node.cells[m["temporal_cv_cell"]]["source"]
+        variant = 1 if "KFold" in cv_src else 0
+
+        nb = from_nbnode(mutated_node)
+        flow = analyze(nb)
+        if variant == 0:
+            tts_calls = [c for c in flow.calls if c.name == "train_test_split"]
+            if any(c.kw_args.get("shuffle") == {"False"} for c in tts_calls):
+                return False, {"reason": "shuffle=False still present on train_test_split"}
+        else:
+            if any(c.name == "TimeSeriesSplit" for c in flow.calls):
+                return False, {"reason": "TimeSeriesSplit call still present"}
+
+        if variant == 0:
+            probe = (
+                "_trd = df.loc[X_tr.index, 'date']\n"
+                "_ted = df.loc[X_te.index, 'date']\n"
+                "print('WALD_VERIFY_TEMPORAL', int(_trd.max() > _ted.min()), "
+                "_trd.max().date(), _ted.min().date())"
+            )
+            executed = ex.execute(ex.with_appended_code_cell(mutated_node, probe))
+            lines = ex.stdout_lines(executed, "WALD_VERIFY_TEMPORAL")
+            if not lines:
+                return False, {"reason": "no verify output"}
+            _, flag, train_max, test_min = lines[-1].split()
+            ok = int(flag) == 1
+            return ok, {"variant": 0, "train_max_date": train_max, "test_min_date": test_min}
+        else:
+            probe = (
+                "_tr, _te = next(iter(cv.split(X)))\n"
+                "print('WALD_VERIFY_TEMPORAL_CV', "
+                "int(df['date'].iloc[_tr].max() > df['date'].iloc[_te].min()), "
+                "df['date'].iloc[_tr].max().date(), df['date'].iloc[_te].min().date())"
+            )
+            executed = ex.execute(ex.with_appended_code_cell(mutated_node, probe))
+            lines = ex.stdout_lines(executed, "WALD_VERIFY_TEMPORAL_CV")
+            if not lines:
+                return False, {"reason": "no verify output"}
+            _, flag, train_max, test_min = lines[-1].split()
+            ok = int(flag) == 1
+            return ok, {"variant": 1, "train_max_date": train_max, "test_min_date": test_min}
+
+
 MUTATIONS: list[Mutation] = [
     FitBeforeSplitMutation(),
     MultipleTestingMutation(),
@@ -497,4 +579,5 @@ MUTATIONS: list[Mutation] = [
     SurvivorshipMutation(),
     SignificanceMeaninglessMutation(),
     RegressionToMeanMutation(),
+    TemporalShuffleMutation(),
 ]

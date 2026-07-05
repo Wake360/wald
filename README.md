@@ -49,14 +49,15 @@ Detection quality is then a confusion matrix per flaw class, not an opinion:
 | class (static layer) | mutants | TP | FN | FP | precision | recall |
 |---|---|---|---|---|---|---|
 | leakage-fit-before-split | 24 | 24 | 0 | 0 | 1.00 | 1.00 |
+| leakage-temporal-shuffle | 16 | 16 | 0 | 0 | 1.00 | 1.00 |
 | testing-multiple-uncorrected | 96 | 96 | 0 | 0 | 1.00 | 1.00 |
 | baserate-accuracy-imbalanced | 8 | 8 | 0 | 0 | 1.00 | 1.00 |
 | selection-survivorship-cohort (candidate) | 16 | 16 | 0 | — | — | 1.00 |
 
-False-positive rate on the 75-notebook clean corpus (48 synthetic + 27
+False-positive rate on the 83-notebook clean corpus (56 synthetic + 27
 hand-reviewed real notebooks from Apache-2.0/MIT repositories): **0.0%**.
-176/176 mutants passed mechanical verification at build; 0 discarded.
-32 of the 176 are narrative-only mutants (regression-to-mean-claim,
+192/192 mutants passed mechanical verification at build; 0 discarded.
+32 of the 192 are narrative-only mutants (regression-to-mean-claim,
 significance-meaningless); they are scored by the `--llm` eval, not by
 this table, and no numbers are claimed for them until its gates run.
 (Eval 2026-07-05, `evals/2026-07-05-eval.json`.)
@@ -79,7 +80,7 @@ notebooks are messier.
 
 ## What Wald sees (v1) and what it doesn't
 
-The static layer (deterministic, no API key, runs in CI) decides three
+The static layer (deterministic, no API key, runs in CI) decides four
 classes on its own:
 
 - `leakage-fit-before-split` — flow-sensitive def-use dataflow: a
@@ -93,6 +94,14 @@ classes on its own:
   fits on the train split, label encoding and estimator fits are not
   flagged — each of those idioms was a measured false-positive class in
   the dogfood report.
+- `leakage-temporal-shuffle` — time-ordered data with lag/rolling-window
+  features (`shift`, `rolling`, `diff`, `pct_change`, …) split by a
+  shuffled protocol — default `train_test_split`, shuffled `KFold` —
+  instead of `TimeSeriesSplit`, `shuffle=False`, or a temporal cutoff.
+  Signals are evaluated per evaluation sink on that sink's dependency
+  chain: a date column alone never fires, bare `scipy.ndimage.shift` /
+  `sklearn.utils.resample` / `np.diff` never fire, and a frame sorted on
+  a non-date key with neighbor-comparison features never fires.
 - `testing-multiple-uncorrected` — counts statistical test call sites
   (loops weighted), checks for corrections, reports the implied FWER.
 - `baserate-accuracy-imbalanced` — accuracy as the only metric while class

@@ -469,6 +469,70 @@ def program_notebook(seed: int):
     })
 
 
+def forecast_notebook(seed: int):
+    cells = [
+        _md("# Demand forecast — temporal validation\n\n"
+            "Predicting daily demand from lagged history. Validation here is "
+            "temporal: metrics come from forecasting later days using only "
+            "information from earlier days, never the reverse."),
+        _code(
+            "import numpy as np\n"
+            "import pandas as pd\n"
+            "from sklearn.model_selection import train_test_split, TimeSeriesSplit, cross_val_score\n"
+            "from sklearn.linear_model import Ridge\n"
+            "from sklearn.metrics import mean_absolute_error, r2_score"
+        ),
+        _code(
+            f"rng = np.random.default_rng({seed})\n"
+            "dates = pd.date_range('2024-01-01', periods=730, freq='D')\n"
+            "n = len(dates)\n"
+            "trend = np.linspace(100, 160, n)\n"
+            "weekly = 15 * np.sin(2 * np.pi * np.arange(n) / 7)\n"
+            "noise = rng.normal(0, 5, n)\n"
+            "ar = np.zeros(n)\n"
+            "for t in range(1, n):\n"
+            "    ar[t] = 0.6 * ar[t - 1] + noise[t]\n"
+            "demand = trend + weekly + ar\n"
+            "df = pd.DataFrame({'date': dates, 'demand': demand.round(1)})"
+        ),
+        _code(
+            "df['demand_lag1'] = df['demand'].shift(1)\n"
+            "df['demand_lag7'] = df['demand'].shift(7)\n"
+            "df['demand_ma14'] = df['demand'].rolling(14).mean()\n"
+            "df['dow'] = df['date'].dt.dayofweek\n"
+            "df = df.dropna().reset_index(drop=True)"
+        ),
+        _code(
+            "feature_cols = ['demand_lag1', 'demand_lag7', 'demand_ma14', 'dow']\n"
+            "X = df[feature_cols]\n"
+            "y = df['demand']\n"
+            "X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, shuffle=False)\n"
+            "model = Ridge(alpha=1.0)\n"
+            "model.fit(X_tr, y_tr)\n"
+            "pred = model.predict(X_te)\n"
+            "mae = mean_absolute_error(y_te, pred)\n"
+            "r2 = r2_score(y_te, pred)\n"
+            'print(f"mae={mae:.3f}  r2={r2:.3f}")'
+        ),
+        _code(
+            "cv = TimeSeriesSplit(n_splits=5)\n"
+            "scores = cross_val_score(Ridge(alpha=1.0), X, y, cv=cv, "
+            "scoring='neg_mean_absolute_error')\n"
+            'print(f"cv neg_mae: {scores.mean():.3f} +/- {scores.std():.3f}")'
+        ),
+        _md("Both the held-out quarter and the walk-forward cross-validation "
+            "scores describe the model's ability to forecast future demand "
+            "from past observations only; because the split respects time "
+            "order, these numbers are not inflated by peeking at the "
+            "future."),
+    ]
+    return _nb(cells, {
+        "family": "forecast", "seed": seed, "date_col": "date",
+        "temporal_split_cell": 4, "temporal_cv_cell": 5,
+        "imports_cell": 1, "conclusion_cell": 6, "imbalanced": False,
+    })
+
+
 FAMILIES = {
     "churn": churn_notebook,
     "abtest": abtest_notebook,
@@ -476,6 +540,7 @@ FAMILIES = {
     "housing": housing_notebook,
     "cohort": cohort_notebook,
     "program": program_notebook,
+    "forecast": forecast_notebook,
 }
 
 DEV_SEEDS = (11, 12, 13, 14)
@@ -490,6 +555,7 @@ MUTATION_SEEDS = {
     "selection-survivorship-cohort": {"dev": (0, 1), "heldout": (2, 3)},
     "significance-meaningless": {"dev": (0, 1), "heldout": (2, 3)},
     "regression-to-mean-claim": {"dev": (0, 1), "heldout": (2, 3)},
+    "leakage-temporal-shuffle": {"dev": (0, 1), "heldout": (2, 3)},
 }
 
 

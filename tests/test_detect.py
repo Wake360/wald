@@ -483,3 +483,212 @@ def test_leakage_cv_groups_kwarg_not_a_data_seed():
         ("code", "scores = cross_val_score(clf, X_other, y_other, groups=groups)"),
     ])
     assert not [f for f in run_static(notebook) if f.flaw_id == "leakage-fit-before-split"]
+
+
+# -- leakage-temporal-shuffle: FROZEN SPEC, detector not implemented yet --
+# these 15 tests are expected to fail until the detector lands.
+
+
+def test_temporal_flagged_lag_features_shuffled_split():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    assert "leakage-temporal-shuffle" in flag_ids(notebook, floor=0.8)
+
+
+def test_temporal_flagged_rolling_chain():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['roll'] = df['y'].rolling(14).mean()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    assert "leakage-temporal-shuffle" in flag_ids(notebook, floor=0.8)
+
+
+def test_temporal_silent_with_shuffle_false():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'], shuffle=False)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_with_timeseries_split_cv():
+    lag_src = "df['date'] = pd.to_datetime(df['date'])\ndf['l1'] = df['y'].shift(1)"
+
+    tscv = nb([
+        ("code", "from sklearn.model_selection import TimeSeriesSplit"),
+        ("code", lag_src),
+        ("code", "tscv = TimeSeriesSplit(5)"),
+        ("code", "scores = cross_val_score(model, df[cols], df['y'], cv=tscv)"),
+    ])
+    flags = [f for f in run_static(tscv) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+    # the leftover TimeSeriesSplit import must not suppress a genuinely shuffled
+    # KFold in a different variant: suppression is binding-based, not token-based
+    kfold_shuffled = nb([
+        ("code", "from sklearn.model_selection import TimeSeriesSplit"),
+        ("code", lag_src),
+        ("code", "kf = KFold(5, shuffle=True)"),
+        ("code", "scores = cross_val_score(model, df[cols], df['y'], cv=kf)"),
+    ])
+    assert "leakage-temporal-shuffle" in flag_ids(kfold_shuffled)
+
+
+def test_temporal_flagged_shuffled_kfold_cv():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "kf = KFold(5, shuffle=True)"),
+        ("code", "scores = cross_val_score(model, df[cols], df['y'], cv=kf)"),
+    ])
+    assert "leakage-temporal-shuffle" in flag_ids(notebook, floor=0.8)
+
+
+def test_temporal_plain_cv_is_candidate():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "scores = cross_val_score(model, df[cols], df['y'], cv=10)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert flags and all(f.confidence < 0.8 for f in flags)
+
+
+def test_temporal_silent_date_column_alone():
+    # bike-sharing shape (corpus/real notebooks 21/28): datetime column and
+    # categorical casts, shuffled split and CV, but no lag/window features
+    notebook = nb([
+        ("code", "df['dteday'] = pd.to_datetime(df['dteday'])"),
+        ("code", "df['season'] = df['season'].astype('category')\n"
+                  "df['weathersit'] = df['weathersit'].astype('category')"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['cnt'])"),
+        ("code", "scores = cross_val_score(model, df[cols], df['cnt'], cv=5)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_bare_scipy_shift():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "from scipy.ndimage import shift"),
+        ("code", "df['shifted'] = shift(df['y'].values, 1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_sklearn_resample():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "from sklearn.utils import resample"),
+        ("code", "df_r = resample(df, n_samples=100)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df_r[cols], df_r['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_np_diff():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['d'] = np.diff(df['y'].values, prepend=0)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_lag_on_other_frame():
+    notebook = nb([
+        ("code", "ts_df['date'] = pd.to_datetime(ts_df['date'])\nts_df['l1'] = ts_df['y'].shift(1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_after_frame_rebind():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])\ndf['l1'] = df['y'].shift(1)"),
+        ("code", "df = pd.DataFrame(other_data)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_datetime_index_no_lags_is_candidate():
+    notebook = nb([
+        ("code", "df = pd.read_csv('data.csv', parse_dates=['date'], index_col='date')"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert len(flags) == 1
+    assert flags[0].confidence < 0.7
+
+
+def test_temporal_silent_sort_values_non_date():
+    notebook = nb([
+        ("code", "corr = df.corr()\ncorr['v'] = corr['v'].sort_values()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_evidence_points_at_sink():
+    notebook = nb([
+        ("code", "df['date'] = pd.to_datetime(df['date'])"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flag = next(f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle")
+    assert (flag.cell, flag.line) == (2, 1)
+    assert "shift" in flag.evidence
+
+
+def test_temporal_silent_value_sorted_a1_only_shuffled_split():
+    # A1-only (an unused parsed date) on a frame sorted by a VALUE column: the
+    # .diff is cross-sectional over score order, not a temporal lag — no leak
+    notebook = nb([
+        ("code", "df = df.sort_values('score')"),
+        ("code", "df['signup_date'] = pd.to_datetime(df['signup_date'])"),
+        ("code", "df['gap'] = df['score'].diff()"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_silent_value_sorted_a1_only_shuffled_cv():
+    # same root cause reaching the CV sink: income-sorted frame, unused dob date,
+    # rolling feature, KFold(shuffle=True) must not fire
+    notebook = nb([
+        ("code", "df = df.sort_values('income')"),
+        ("code", "df['dob'] = pd.to_datetime(df['dob'])"),
+        ("code", "df['roll'] = df['income'].rolling(3).mean()"),
+        ("code", "kf = KFold(5, shuffle=True)"),
+        ("code", "scores = cross_val_score(model, df[cols], df['y'], cv=kf)"),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "leakage-temporal-shuffle"]
+    assert not flags
+
+
+def test_temporal_flagged_parse_dates_survives_value_sort():
+    # a strong temporal signal (A2, parse_dates) is real time-order even when a
+    # later non-date sort is present: suppression only gates the A1-only case
+    notebook = nb([
+        ("code", "df = pd.read_csv('d.csv', parse_dates=['date'])"),
+        ("code", "df = df.sort_values('amount')"),
+        ("code", "df['l1'] = df['y'].shift(1)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(df[cols], df['y'])"),
+    ])
+    assert "leakage-temporal-shuffle" in flag_ids(notebook, floor=0.8)

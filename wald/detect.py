@@ -92,6 +92,168 @@ def _join_names(names) -> str:
     return ns[0] if len(ns) == 1 else ", ".join(ns[:-1]) + " and " + ns[-1]
 
 
+# -- leakage-temporal-shuffle constants --
+DATETIME_MAKERS = {"to_datetime", "date_range", "DatetimeIndex"}
+DATE_READERS = {"read_csv", "read_parquet", "read_sql"}
+# a lag/window METHOD call: the '.' before the verb is load-bearing — it
+# distinguishes df['y'].shift(1) (a series method, real lag) from a bare
+# shift(image, ...)/np.diff(...) that merely shares the name
+LAG_FUNC_RE = re.compile(r"\.(shift|rolling|resample|diff|pct_change|ewm|expanding|asfreq)\(")
+# base segments that make the lag name a namespaced free function, not a
+# frame method: scipy.ndimage.shift, np.diff, sklearn's utils are not lags
+MODULE_ALIASES = {"np", "numpy", "pd", "pandas", "scipy", "sp", "tf", "torch"}
+TEMPORAL_SORT_INDEX_RE = re.compile(
+    r"(?:set_index|sort_values)\(\s*(?:by\s*=\s*)?['\"]\w*(?:date|datetime|timestamp|dteday)\w*['\"]",
+    re.IGNORECASE,
+)
+# any set_index/sort_values on a LITERAL column, capturing the column name; a
+# match whose column is NOT date-like means the frame's row order is a
+# value ordering, not time — so an A1-only datetime column (an unused parsed
+# date) does not make a .shift/.diff a temporal lag (see the value-sorted FPs)
+SORT_INDEX_COLUMN_RE = re.compile(
+    r"(?:set_index|sort_values)\(\s*(?:by\s*=\s*)?['\"](\w+)['\"]",
+    re.IGNORECASE,
+)
+DATE_COLUMN_RE = re.compile(r"date|datetime|timestamp|dteday", re.IGNORECASE)
+# splitters that shuffle unconditionally (KFold/StratifiedKFold shuffle only
+# when shuffle=True, handled separately; TimeSeriesSplit never does)
+SHUFFLED_SPLITTERS = {"ShuffleSplit", "StratifiedShuffleSplit"}
+_TEMPORAL_SPLITTERS = SHUFFLED_SPLITTERS | {"KFold", "StratifiedKFold", "TimeSeriesSplit"}
+
+
+def detect_leakage_temporal_shuffle(nb: ParsedNotebook, flow: NotebookDataflow) -> list[Flag]:
+    sinks = [c for c in flow.calls if c.name == "train_test_split" or c.name in CV_SINKS]
+    if not sinks:
+        return []
+    src = {c.index: c.source.splitlines() for c in nb.code_cells}
+
+    def is_lag(ev) -> bool:
+        if ev.call is None:
+            return False
+        if not LAG_FUNC_RE.search(ev.call.func + "("):
+            return False
+        base = re.split(r"[.\[]", ev.call.func, maxsplit=1)[0]
+        return base not in MODULE_ALIASES
+
+    def classify_splitter(ctor) -> str:
+        if ctor.name == "TimeSeriesSplit":
+            return "skip"
+        if ctor.name in SHUFFLED_SPLITTERS:
+            return "shuffled"
+        if ctor.name in {"KFold", "StratifiedKFold"}:
+            return "shuffled" if ctor.kw_args.get("shuffle") == {"True"} else "plain"
+        return "plain"
+
+    def cv_state(s) -> str:
+        cv = s.kw_args.get("cv")
+        if not cv:  # absent, or an int literal (no names) -> default plain CV
+            return "plain"
+        for name in cv:
+            ev = flow.last_assign(name, (s.cell, s.line))
+            if ev is not None and ev.call is not None:
+                return classify_splitter(ev.call)
+        for c in flow.calls:  # inline constructor: cv=KFold(5, shuffle=True)
+            if (c.cell, c.line) == (s.cell, s.line) and c.name in _TEMPORAL_SPLITTERS:
+                return classify_splitter(c)
+        return "plain"
+
+    def sink_state(s) -> str:
+        if s.name == "train_test_split":
+            shuffle = s.kw_args.get("shuffle")
+            if shuffle is None or shuffle == {"True"}:
+                return "shuffled"
+            if shuffle == {"False"}:
+                return "skip"
+            return "skip"  # non-literal shuffle: treat as clean (FP discipline)
+        return cv_state(s)
+
+    flags: list[Flag] = []
+    for s in sinks:
+        if s.name in CV_SINKS:
+            seed = set().union(
+                set(), *s.pos_args[1:3],
+                s.kw_args.get("X", set()), s.kw_args.get("y", set()),
+            )
+        else:
+            seed = s.arg_names
+        events, _bindings = flow.chain(seed, (s.cell, s.line))
+        chain_text = "\n".join(
+            src[ev.cell][ev.line - 1]
+            for ev in events
+            if ev.cell in src and 0 < ev.line <= len(src[ev.cell])
+        )
+
+        dt_events = [
+            ev for ev in events
+            if ev.call is not None and (
+                ev.call.name in DATETIME_MAKERS
+                or (ev.call.name in DATE_READERS and "parse_dates" in ev.call.kw_args)
+            )
+        ]
+        a1 = any(ev.call.name in DATETIME_MAKERS for ev in dt_events)
+        a2 = any(ev.call.name in DATE_READERS for ev in dt_events)
+        a3 = bool(TEMPORAL_SORT_INDEX_RE.search(chain_text))
+        a_any = a1 or a2 or a3
+        a_strong = a2 or a3
+        if not a_any:
+            continue
+        # A1 (a bare to_datetime column) is weak temporal identity: it can be an
+        # unused parsed date on a frame whose rows are ordered by value. When the
+        # only signal is A1 and the chain sorts on a non-date column, the frame is
+        # value-sorted, not time-sorted, so a lag/window method is cross-sectional,
+        # not a temporal lag — emit nothing (kills the value-sorted FPs).
+        if a1 and not a_strong and any(
+            not DATE_COLUMN_RE.search(m.group(1))
+            for m in SORT_INDEX_COLUMN_RE.finditer(chain_text)
+        ):
+            continue
+
+        lag_events = [ev for ev in events if is_lag(ev)]
+        has_lag = bool(lag_events)
+        state = sink_state(s)
+        if state == "skip":
+            continue
+
+        if a_any and has_lag and state == "shuffled":
+            confidence = 0.9
+        elif a_any and has_lag and state == "plain":
+            confidence = 0.75
+        elif a_strong and not has_lag and s.name == "train_test_split" and state == "shuffled":
+            confidence = 0.6
+        else:
+            continue
+
+        dt_cell = dt_events[0].cell if dt_events else s.cell
+        if has_lag:
+            lag_desc = ", ".join(
+                f"`.{LAG_FUNC_RE.search(ev.call.func + '(').group(1)}` at cell {ev.cell} line {ev.line}"
+                for ev in lag_events
+            )
+            evidence = (
+                f"time-ordered frame (datetime origin in cell {dt_cell}) carries "
+                f"lag/window features ({lag_desc}); `{s.name}` (cell {s.cell}) uses a "
+                f"{'shuffled' if state == 'shuffled' else 'non-temporal'} split, "
+                f"leaking future rows into training"
+            )
+        else:
+            evidence = (
+                f"time-ordered frame (datetime origin in cell {dt_cell}) is split by a "
+                f"shuffled `train_test_split` (cell {s.cell}); no lag features detected, "
+                f"but shuffling time-ordered rows risks leakage (candidate)"
+            )
+        flags.append(
+            _make_flag(
+                "leakage-temporal-shuffle",
+                confidence=confidence,
+                cell=s.cell,
+                line=s.line,
+                evidence=evidence,
+                sink=s.name,
+            )
+        )
+    return flags
+
+
 def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) -> list[Flag]:
     sinks = [c for c in flow.calls if c.name == "train_test_split" or c.name in CV_SINKS]
     if not sinks:
@@ -433,6 +595,7 @@ def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) ->
 
 DETECTORS = [
     detect_leakage_fit_before_split,
+    detect_leakage_temporal_shuffle,
     detect_multiple_testing,
     detect_baserate_accuracy,
     detect_survivorship_candidate,
@@ -441,6 +604,7 @@ DETECTORS = [
 # flaw classes the static layer can decide on its own (measured by gate G1)
 STATIC_DECIDABLE = {
     "leakage-fit-before-split",
+    "leakage-temporal-shuffle",
     "testing-multiple-uncorrected",
     "baserate-accuracy-imbalanced",
 }
