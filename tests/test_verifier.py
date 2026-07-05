@@ -92,6 +92,33 @@ def test_prompt_contains_definition_disqualifier_and_full_cell_text():
     assert "ltv = df.ltv.mean()" in prompt
 
 
+def nb_with_output(output_text: str) -> ParsedNotebook:
+    parsed = nb()
+    parsed.cells[3].outputs_text = output_text
+    return parsed
+
+
+def test_prompt_includes_cited_code_cell_output():
+    backend = StubBackend({"verdict": "unsupported", "reason": "x"})
+    verify_finding(finding(), nb_with_output("p = 0.03, cohens_d = 0.02"), backend)
+    prompt = backend.last_user
+    assert "[output]" in prompt
+    assert "p = 0.03, cohens_d = 0.02" in prompt
+
+
+def test_prompt_truncates_long_code_cell_output():
+    from wald.verifier import OUTPUT_CAP
+
+    long_output = "Z" * (OUTPUT_CAP + 200)
+    backend = StubBackend({"verdict": "unsupported", "reason": "x"})
+    verify_finding(finding(), nb_with_output(long_output), backend)
+    prompt = backend.last_user
+    assert "[output]" in prompt
+    assert "…[output truncated]" in prompt
+    assert long_output not in prompt
+    assert prompt.count("Z") == OUTPUT_CAP
+
+
 def test_garbage_output_is_unsupported():
     backend = StubBackend({"nonsense": True})
     verdict = verify_finding(finding(), nb(), backend)

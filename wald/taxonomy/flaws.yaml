@@ -86,8 +86,14 @@
     the p-value.
   narrative_enabled: true
   disqualifiers:
-    - An effect size or confidence interval is reported and interpreted
-      alongside the p-value, not just the p-value alone.
+    - The written conclusion acknowledges an effect size or confidence
+      interval alongside the p-value — either stating the number or
+      stating that it is reported. Acknowledgment alone is enough; the
+      magnitude of the effect, and whether the prose interprets its
+      practical significance, do not matter for this disqualifier.
+      Only a conclusion entirely silent on effect size fails it, and a
+      silent conclusion gets no credit for a value that appears only
+      in code or output.
     - The effect size is non-negligible.
 
 - id: regression-to-mean-claim

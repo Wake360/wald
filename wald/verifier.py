@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from .ingest import ParsedNotebook
 from .llm import Backend, BackendError
+from .narrative import OUTPUT_CAP
 from .taxonomy import load_taxonomy
 
 SYSTEM_PROMPT = """\
@@ -34,7 +35,13 @@ def _build_prompt(finding, nb: ParsedNotebook) -> str:
     d = load_taxonomy()[finding.flaw_id]
     disqualifiers = "\n".join(f"- {dq}" for dq in d.disqualifiers)
     claim_cell_source = next((c.source for c in nb.cells if c.index == finding.claim_cell), "")
-    code_cell_source = next((c.source for c in nb.cells if c.index == finding.code_cell), "")
+    code_cell = next((c for c in nb.cells if c.index == finding.code_cell), None)
+    code_cell_source = code_cell.source if code_cell else ""
+    if code_cell is not None and code_cell.outputs_text:
+        capped = code_cell.outputs_text[:OUTPUT_CAP]
+        if len(code_cell.outputs_text) > OUTPUT_CAP:
+            capped += " …[output truncated]"
+        code_cell_source += f"\n[output]\n{capped}"
     return f"""FLAW DEFINITION ({finding.flaw_id}): {d.definition}
 
 DISQUALIFIERS (answer unsupported if any applies):

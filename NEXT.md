@@ -29,6 +29,16 @@ Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
   negative corpus (one recipe mined from the 119 dogfood FPs), backend
   seam, detector, verifier, fusion, eval extension — all against replay
   fixtures. Static-only stays the default and needs no key.
+- Phase 2 done (2026-07-05): prompt shaken down on the dev split via a
+  session-agent backend (`claude -p`, $0, never gate evidence). Two
+  iterations, both forensics-driven: the significance disqualifier now
+  requires acknowledgment in the written conclusion, and the verifier
+  prompt includes the cited cell's executed output. Final dev numbers
+  (sonnet detector / haiku stand-in verifier): recall 0.75/1.00/1.00
+  across the three classes, clean FP 0%, drops 6.7%, G3 kill 20/20,
+  true-flag survival 22/22. Known seam for M3: a code quote that
+  crosses into `[output]` text can never ground (cost: 2/8 dev recall
+  on significance, sampling-dependent).
 - Remaining: the G2/G3 gate runs need TWO keys (Anthropic detector +
   OpenAI verifier; cross-provider is a hard constraint). Projected spend
   ~$30–45 of the $150 budget.
