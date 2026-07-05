@@ -7,14 +7,28 @@ notebooks are never executed unless they pass --execute explicitly (M2+).
 from __future__ import annotations
 
 import copy
+import sys
 
 import nbformat
+from ipykernel.kernelspec import install as install_kernelspec
+from jupyter_client.kernelspec import KernelSpecManager, NoSuchKernel
 from nbclient import NotebookClient
+
+
+def _ensure_kernelspec(kernel_name: str = "python3") -> None:
+    """Make kernel_name resolve to the running interpreter, not an ambient one."""
+    try:
+        spec = KernelSpecManager().get_kernel_spec(kernel_name)
+    except NoSuchKernel:
+        spec = None
+    if spec is None or spec.argv[0] != sys.executable:
+        install_kernelspec(user=True, kernel_name=kernel_name)
 
 
 def execute(nb_node, timeout: int = 180):
     """Execute a notebook node in place-safe copy; returns the executed node."""
     nb = copy.deepcopy(nb_node)
+    _ensure_kernelspec("python3")
     client = NotebookClient(nb, timeout=timeout, kernel_name="python3")
     client.execute()
     return nb

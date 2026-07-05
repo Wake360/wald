@@ -28,6 +28,13 @@ def test_narrative_enabled_classes_have_disqualifiers():
         assert 2 <= len(taxonomy[fid].disqualifiers) <= 4
 
 
+def test_baserate_failure_scenario_has_no_hardcoded_number():
+    # the evidence line reports the measured majority share; a fixed
+    # percentage here would contradict it in the same flag
+    d = load_taxonomy()["baserate-accuracy-imbalanced"]
+    assert "%" not in d.failure_scenario
+
+
 def test_fusion_rules_load():
     rules = load_fusion_rules()
     assert {r.id for r in rules} == {

@@ -215,6 +215,38 @@ def test_gate_evidence_false_for_stub_run(results):
     assert results["usage"] == {"detector": None, "verifier": None}
 
 
+def test_evaluate_narrative_continues_past_backend_error(mini):
+    from wald.llm import BackendError
+
+    rtm_marker = mini["det_routes"][1][0]  # the RTM mutant's conclusion text
+
+    class FlakyDet(DetStub):
+        def complete(self, system, user, schema=None):
+            if rtm_marker in user:
+                raise BackendError("simulated 503")
+            return super().complete(system, user, schema)
+
+    det = FlakyDet(mini["det_routes"])
+    ver = VerStub(mini["support"])
+    res = evaluate_narrative(mini["root"], det, ver, split="dev")
+
+    manifest = json.loads((mini["root"] / "MANIFEST.json").read_text())
+    rtm_file = next(e["file"] for e in manifest["mutants"]
+                    if e["flaw_id"] == "regression-to-mean-claim")
+
+    # the errored file lands in backend_errors and contributes to no bucket
+    assert len(res["backend_errors"]) == 1
+    assert res["backend_errors"][0]["file"] == rtm_file
+    assert "simulated 503" in res["backend_errors"][0]["error"]
+    rtm = res["narrative_classes"]["regression-to-mean-claim"]
+    assert (rtm["tp"], rtm["fn"], rtm["fp"]) == (0, 0, 0)
+    assert rtm_file not in res["missed_mutants"]
+    # the other mutant is still scored, and any backend error voids the gate
+    surv = res["narrative_classes"]["selection-survivorship-cohort"]
+    assert (surv["tp"], surv["fn"], surv["fp"]) == (1, 0, 0)
+    assert res["gate_evidence"] is False
+
+
 def test_heldout_raises_before_any_call(mini):
     det = DetStub(mini["det_routes"])
     ver = VerStub(mini["support"])

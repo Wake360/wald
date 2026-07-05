@@ -30,6 +30,11 @@ _WRAPPER_MAGIC_RE = re.compile(r"^%%?(?:time|timeit|prun)\s+(?![-%!])(.+)$")
 
 # cell magics whose body is not Python; anything else that fails to parse
 # is a real parse error and must be recorded
+# cst.parse_module + MetadataWrapper are superlinear; a single pathological
+# cell (e.g. a 10MB generated paste) can dominate runtime. Skip cells past
+# this size — far above any real analysis cell — so one cell cannot hang a run.
+MAX_CELL_SOURCE_BYTES = 200_000
+
 _NON_PYTHON_CELL_MAGICS = {
     "%%writefile", "%%file", "%%bash", "%%sh", "%%script", "%%cmd",
     "%%html", "%%javascript", "%%js", "%%latex", "%%markdown", "%%svg",
@@ -316,6 +321,8 @@ class NotebookDataflow:
 def analyze(nb: ParsedNotebook) -> NotebookDataflow:
     flow = NotebookDataflow()
     for cell in nb.code_cells:
+        if len(cell.source) > MAX_CELL_SOURCE_BYTES:
+            continue  # oversized cell: skip to keep runtime bounded
         # valid Python first: a leading "%" can be a formatting continuation
         # line, not a magic, and stripping it would break the parse
         try:

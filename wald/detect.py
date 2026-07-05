@@ -87,6 +87,11 @@ NON_LEAKY_TRANSFORMERS = {"LabelEncoder", "LabelBinarizer"}
 CV_SINKS = {"cross_val_score", "cross_val_predict", "cross_validate"}
 
 
+def _join_names(names) -> str:
+    ns = sorted(names)
+    return ns[0] if len(ns) == 1 else ", ".join(ns[:-1]) + " and " + ns[-1]
+
+
 def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) -> list[Flag]:
     sinks = [c for c in flow.calls if c.name == "train_test_split" or c.name in CV_SINKS]
     if not sinks:
@@ -197,7 +202,7 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
                     if not (on_chain or transforms_split_part):
                         continue
                     emit(call, 0.92, leaked, (
-                        f"`{call.func}(...)` consumes {sorted(leaked)}, "
+                        f"`{call.func}(...)` consumes {_join_names(leaked)}, "
                         f"feeding `train_test_split` (cell {sink.cell}) — "
                         f"the fit happened before the split"
                     ))
@@ -209,7 +214,7 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
                     # practice and stay below the confidence floor
                     supervised = len(call.pos_args) >= 2 or "y" in call.kw_args
                     emit(call, 0.9 if supervised else 0.75, leaked, (
-                        f"`{call.func}(...)` is fitted on {sorted(leaked)} whose "
+                        f"`{call.func}(...)` is fitted on {_join_names(leaked)} whose "
                         f"transformed output feeds `{sink.name}` (cell {sink.cell}); "
                         f"every CV fold's test rows were in the transformer fit"
                         + (" (fitted with labels)" if supervised else "")
@@ -441,8 +446,9 @@ STATIC_DECIDABLE = {
 }
 
 
-def run_static(nb: ParsedNotebook) -> list[Flag]:
-    flow = analyze(nb)
+def run_static(nb: ParsedNotebook, flow: NotebookDataflow | None = None) -> list[Flag]:
+    if flow is None:
+        flow = analyze(nb)
     flags: list[Flag] = []
     for detector in DETECTORS:
         flags.extend(detector(nb, flow))

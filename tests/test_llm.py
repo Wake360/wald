@@ -1,3 +1,4 @@
+import email.message
 import hashlib
 import json
 import urllib.error
@@ -245,3 +246,89 @@ def test_openai_malformed_envelope_wrapped_in_backend_error(monkeypatch):
     backend = llm.OpenAIBackend()
     with pytest.raises(llm.BackendError):
         backend.complete("sys", "user")
+
+
+def test_openai_sends_max_tokens(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    bodies = []
+
+    def fake_urlopen(req, *a, **kw):
+        bodies.append(json.loads(req.data))
+        return FakeResponse({"choices": [{"message": {"content": "{}"}}]})
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    llm.OpenAIBackend().complete("sys", "user")
+    assert bodies[0]["max_tokens"] == 8192
+
+
+def test_retry_on_429_honors_retry_after_then_succeeds(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    hdrs = email.message.Message()
+    hdrs["Retry-After"] = "3"
+    calls = []
+    slept = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: slept.append(s))
+
+    def fake_urlopen(req, *a, **kw):
+        calls.append(req)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError("http://x", 429, "Too Many Requests", hdrs, None)
+        return FakeResponse({"content": [{"text": '{"ok": 1}'}]})
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    assert llm.AnthropicBackend().complete("sys", "user") == {"ok": 1}
+    assert len(calls) == 2
+    assert slept == [3.0]
+
+
+def test_retry_exhausted_on_persistent_5xx_raises_backend_error(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    calls = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+
+    def fake_urlopen(req, *a, **kw):
+        calls.append(req)
+        raise urllib.error.HTTPError("http://x", 529, "Overloaded", None, None)
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(llm.BackendError):
+        llm.OpenAIBackend().complete("sys", "user")
+    assert len(calls) == 2  # one retry, then give up
+
+
+def test_anthropic_accumulates_usage(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+    def fake_urlopen(req, *a, **kw):
+        return FakeResponse(
+            {"content": [{"text": "{}"}], "usage": {"input_tokens": 10, "output_tokens": 4}}
+        )
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    backend = llm.AnthropicBackend()
+    backend.complete("sys", "user")
+    backend.complete("sys", "user")
+    assert backend.usage == {"input_tokens": 20, "output_tokens": 8}
+
+
+def test_openai_accumulates_usage(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    def fake_urlopen(req, *a, **kw):
+        return FakeResponse(
+            {"choices": [{"message": {"content": "{}"}}],
+             "usage": {"prompt_tokens": 7, "completion_tokens": 2}}
+        )
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    backend = llm.OpenAIBackend()
+    backend.complete("sys", "user")
+    assert backend.usage == {"input_tokens": 7, "output_tokens": 2}
+
+
+def test_replay_cache_write_is_atomic(tmp_path):
+    inner = StubBackend({"ok": True})
+    llm.ReplayBackend(tmp_path, inner=inner).complete("sys", "user")
+    files = list(tmp_path.iterdir())
+    assert len(files) == 1 and files[0].suffix == ".json"  # no leftover .tmp
+    assert json.loads(files[0].read_text())["response"] == {"ok": True}

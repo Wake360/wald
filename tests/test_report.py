@@ -120,3 +120,25 @@ def test_markdown_report_sections():
     assert "HIGH: leakage-fit-before-split" in md
     assert "Failure scenario" in md
     assert "CLEAN (checked)" in md  # negative assurance for the other classes
+
+
+def test_candidate_class_not_certified_clean():
+    # a below-floor flag is still a flag: its class must not appear as clean
+    cand = flag(confidence=0.55)
+    data = json.loads(to_json("nb.ipynb", [cand]))
+    assert "leakage-fit-before-split" not in data["clean_classes"]
+    md = to_markdown("nb.ipynb", [cand])
+    clean_line = next(l for l in md.splitlines() if l.startswith("## CLEAN"))
+    assert "leakage-fit-before-split" not in clean_line
+
+
+def test_verdict_and_header_acknowledge_candidates():
+    md = to_markdown("nb.ipynb", [flag(confidence=0.55)])
+    assert "verdict: clean, 1 candidate below floor | static layer (no LLM)" in md
+    assert "## Candidates (below confidence floor 0.80)" in md
+
+
+def test_definition_bullet_labeled_flaw():
+    md = to_markdown("nb.ipynb", [flag()])
+    assert "- **Flaw:**" in md
+    assert "Why it matters" not in md

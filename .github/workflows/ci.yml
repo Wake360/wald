@@ -13,7 +13,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e .[corpus,dev]
-      - run: python -m ipykernel install --user --name python3
       # unit tests: fast, no kernel execution
       - run: pytest tests/ --ignore=tests/test_gates.py -q
       # golden gates G0+G1: rebuild the corpus from scratch (mutation verify

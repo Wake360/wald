@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import os
 import sys
@@ -99,15 +100,16 @@ def cmd_check(args) -> int:
         if args.llm:
             refusal = _heldout_refusal(path, det, ver)
             if refusal:
-                print(refusal, file=sys.stderr)
-                return 2
+                print(f"wald: {refusal}", file=sys.stderr)
+                return 3
         try:
             nb = parse_notebook(path)
-        except (OSError, ValueError) as exc:
+        except Exception as exc:
             print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
             return 3
-        flags = run_full(nb, det, ver) if args.llm else run_static(nb)
-        warning = parse_warning(len(analyze(nb).parse_errors), len(nb.code_cells))
+        flow = analyze(nb)
+        flags = run_full(nb, det, ver) if args.llm else run_static(nb, flow)
+        warning = parse_warning(len(flow.parse_errors), len(nb.code_cells))
         if args.format == "json":
             reports.append(report_obj(path, flags, args.floor, args.severity_gate, warning))
         else:
@@ -157,6 +159,11 @@ def cmd_corpus_build(args) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="wald", description="Statistical-integrity linter for notebooks.")
+    try:
+        _version = importlib.metadata.version("wald-lint")
+    except importlib.metadata.PackageNotFoundError:
+        _version = "unknown"
+    parser.add_argument("-V", "--version", action="version", version=f"wald {_version}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_check = sub.add_parser(
@@ -171,8 +178,8 @@ def main(argv=None) -> int:
                          help="confidence floor in [0, 1] (default: %(default)s); findings below "
                               "it move to Candidates instead of Flags")
     p_check.add_argument("--severity-gate", choices=["medium", "high"], default="high",
-                         help="exit 2 only at or above this severity (default: %(default)s); "
-                              "lower confident findings exit 1")
+                         help="exit 2 at or above this severity (default: %(default)s); "
+                              "confident findings below the gate exit 1")
     p_check.add_argument("--llm", action="store_true",
                          help="add the narrative layer (needs API keys)")
     p_check.add_argument("--replay-dir", help="record/replay LLM responses here")

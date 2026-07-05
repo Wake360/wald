@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .detect import DEFAULT_CONFIDENCE_FLOOR, STATIC_DECIDABLE, run_static
 from .ingest import parse_notebook
-from .llm import PINNED_DETECTOR_MODEL, PINNED_VERIFIER_MODEL
+from .llm import PINNED_DETECTOR_MODEL, PINNED_VERIFIER_MODEL, BackendError
 from .taxonomy import load_taxonomy
 
 
@@ -215,12 +215,19 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
     survival = {"supported": 0, "total": 0}
     clean_fp_files = []
     misses = []
+    backend_errors = []
 
     def narrative_flags(file):
         nonlocal n_dropped, n_raw_findings
         survivors, narrative, fused = run_full_traced(
             parse_notebook(root / file), det_backend, ver_backend
         )
+        # detect_narrative fails closed on a detector BackendError (empty result
+        # tagged in `dropped`); re-raise so this file is recorded as a backend
+        # error rather than silently scored as a miss.
+        detector_error = next((d for d in narrative.dropped if d.startswith("backend error:")), None)
+        if detector_error is not None:
+            raise BackendError(detector_error)
         dropped_here = sum(1 for d in narrative.dropped if "finding dropped" in d)
         n_dropped += dropped_here
         n_raw_findings += len(narrative.findings) + dropped_here
@@ -232,7 +239,11 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         if entry["split"] != split or entry["flaw_id"] not in per_class:
             continue
         label = entry["flaw_id"]
-        flags, fused, kept = narrative_flags(entry["file"])
+        try:
+            flags, fused, kept = narrative_flags(entry["file"])
+        except BackendError as exc:
+            backend_errors.append({"file": entry["file"], "error": str(exc)})
+            continue
         hit = any(f.flaw_id == label and f.confidence >= floor for f in flags)
         per_class[label]["tp" if hit else "fn"] += 1
         if not hit:
@@ -254,7 +265,11 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         n_real = len(real_clean)
         clean_entries = clean_entries + real_clean
     for entry in clean_entries:
-        flags, _, _ = narrative_flags(entry["file"])
+        try:
+            flags, _, _ = narrative_flags(entry["file"])
+        except BackendError as exc:
+            backend_errors.append({"file": entry["file"], "error": str(exc)})
+            continue
         confident = [f for f in flags if f.confidence >= floor]
         for f in confident:
             if f.flaw_id in per_class:
@@ -274,10 +289,13 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         )
         verdict = verify_finding(target, parse_notebook(root / f["source_file"]), ver_backend)
         r = g3.setdefault(f["recipe"], {"killed": 0, "total": 0})
+        if verdict.reason.startswith("backend error:"):
+            r["errors"] = r.get("errors", 0) + 1
+            continue
         r["total"] += 1
         r["killed"] += not verdict.supported
     for r in g3.values():
-        r["kill_rate"] = r["killed"] / r["total"]
+        r["kill_rate"] = r["killed"] / r["total"] if r["total"] else None
 
     return {
         "date": date.today().isoformat(),
@@ -292,10 +310,12 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         # disk has flipped ineligible by now; models must also be the pinned
         # ones (per the spec) or a swapped-model run could pass silently
         "gate_evidence": bool(
-            det_backend.gate_eligible and ver_backend.gate_eligible
+            not backend_errors
+            and det_backend.gate_eligible and ver_backend.gate_eligible
             and det_backend.model == PINNED_DETECTOR_MODEL
             and ver_backend.model == PINNED_VERIFIER_MODEL
         ),
+        "backend_errors": backend_errors,
         "usage": {"detector": getattr(det_backend, "usage", None),
                   "verifier": getattr(ver_backend, "usage", None)},
         "n_clean": len(clean_entries),
@@ -352,12 +372,26 @@ def render_llm_report(results: dict) -> str:
            if fp_rate is not None else "—"),
         f"Dropped ungrounded: {d['dropped']}/{d['raw_findings']} raw findings"
         + (f" ({d['rate']:.1%})" if d["rate"] is not None else ""),
+    ]
+    if results.get("backend_errors"):
+        lines += [
+            "",
+            f"## Backend errors ({len(results['backend_errors'])} files — "
+            "gate evidence void)",
+            "",
+        ]
+        lines += [f"- {e['file']}: {e['error']}" for e in results["backend_errors"]]
+    lines += [
         "",
         "## G3 — seeded false flags (verifier kill rate per recipe)",
         "",
     ]
     for recipe, r in sorted(results["g3_per_recipe"].items()):
-        lines.append(f"- {recipe}: killed {r['killed']}/{r['total']} ({r['kill_rate']:.0%})")
+        kr = f"{r['kill_rate']:.0%}" if r["kill_rate"] is not None else "—"
+        line = f"- {recipe}: killed {r['killed']}/{r['total']} ({kr})"
+        if r.get("errors"):
+            line += f", {r['errors']} excluded as backend errors"
+        lines.append(line)
     s = results["true_flag_survival"]
     lines.append(
         f"\nTrue-flag survival on the same run: {s['supported']}/{s['total']}"

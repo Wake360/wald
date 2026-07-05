@@ -22,17 +22,14 @@ verdict: 1 high, 0 medium | static layer (no LLM)
 
 ## HIGH: leakage-fit-before-split
 - **Where:** cell 5, line 2
-- **Evidence:** `scaler.fit_transform(...)` consumes ['X'], feeding
-  `train_test_split` (cell 5) — the fit happened before the split
-- **Why it matters:** A transformation (scaler, imputer, encoder, feature
-  selector, PCA, vectorizer) is fitted on data that contains the test set.
-- **Failure scenario:** Test metrics are inflated; the production model will
-  underperform the reported numbers.
-- **Fix:** Fit the transformer on the training split only; apply transform
-  to the test split.
+- **Evidence:** `scaler.fit_transform(...)` consumes X, feeding `train_test_split` (cell 5) — the fit happened before the split
+- **Flaw:** A transformation (scaler, imputer, encoder, feature selector, PCA, vectorizer) is fitted on data that contains the test set.
+- **Failure scenario:** Test metrics are inflated; the production model will underperform the reported numbers.
+- **Fix:** Fit the transformer on the training split only; apply transform to the test split.
 - **Confidence:** 0.92
 
 ## CLEAN (checked): baserate-accuracy-imbalanced, testing-multiple-uncorrected
+
 ```
 
 Exit codes: `0` clean, `1` medium findings, `2` high findings — usable as a

@@ -143,8 +143,8 @@
     (>80/20).
   book_anchor: "accuracy paradox / null-classifier baseline; ISLP ch. 4"
   failure_scenario: >
-    A majority-class predictor achieves the same "94% accuracy"; the model
-    may have learned nothing.
+    A predictor that always outputs the majority class scores the same
+    accuracy; the model may have learned nothing.
   fix: >
     Report ROC-AUC / precision-recall / F1 alongside accuracy, and state
     the class balance.

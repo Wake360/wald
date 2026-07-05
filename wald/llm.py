@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import subprocess
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -21,6 +22,8 @@ from typing import Protocol
 PINNED_DETECTOR_MODEL = "claude-sonnet-4-6"
 PINNED_VERIFIER_MODEL = "gpt-4.1-2025-04-14"
 MAX_TOKENS = 8192
+HTTP_TIMEOUT = 120
+RETRY_AFTER_DEFAULT = 20.0
 
 
 class BackendError(Exception):
@@ -48,6 +51,24 @@ def _strip_fences(text: str) -> str:
     return text.strip()
 
 
+def _post_json(req: urllib.request.Request) -> dict:
+    """POST returning parsed JSON. Retry once on 429/5xx after Retry-After
+    (or ~20s); any other transport failure becomes a BackendError."""
+    for attempt in (0, 1):
+        try:
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as exc:
+            retryable = exc.code == 429 or 500 <= exc.code < 600
+            if attempt == 0 and retryable:
+                ra = exc.headers.get("Retry-After") if exc.headers else None
+                time.sleep(float(ra) if ra and ra.strip().isdigit() else RETRY_AFTER_DEFAULT)
+                continue
+            raise BackendError(f"request failed: http {exc.code}: {exc}") from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            raise BackendError(f"request failed: {exc}") from exc
+
+
 def _with_schema(user: str, schema: dict | None) -> str:
     if schema is None:
         return user
@@ -72,6 +93,9 @@ class AnthropicBackend:
     model: str = PINNED_DETECTOR_MODEL
     provider: str = field(default="anthropic", init=False)
     kind: str = field(default="api", init=False)
+    usage: dict = field(
+        default_factory=lambda: {"input_tokens": 0, "output_tokens": 0}, init=False
+    )
 
     @property
     def gate_eligible(self) -> bool:
@@ -96,11 +120,10 @@ class AnthropicBackend:
                 "content-type": "application/json",
             },
         )
-        try:
-            with urllib.request.urlopen(req) as resp:
-                payload = json.load(resp)
-        except (urllib.error.URLError, TimeoutError) as exc:
-            raise BackendError(f"anthropic request failed: {exc}") from exc
+        payload = _post_json(req)
+        u = payload.get("usage") or {}
+        self.usage["input_tokens"] += u.get("input_tokens", 0)
+        self.usage["output_tokens"] += u.get("output_tokens", 0)
         if payload.get("stop_reason") == "max_tokens":
             raise BackendError("anthropic response truncated at max_tokens")
         try:
@@ -117,6 +140,9 @@ class OpenAIBackend:
     model: str = PINNED_VERIFIER_MODEL
     provider: str = field(default="openai", init=False)
     kind: str = field(default="api", init=False)
+    usage: dict = field(
+        default_factory=lambda: {"input_tokens": 0, "output_tokens": 0}, init=False
+    )
 
     @property
     def gate_eligible(self) -> bool:
@@ -128,6 +154,7 @@ class OpenAIBackend:
             raise RuntimeError("OPENAI_API_KEY is not set")
         body = json.dumps({
             "model": self.model,
+            "max_tokens": MAX_TOKENS,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -141,11 +168,10 @@ class OpenAIBackend:
                 "content-type": "application/json",
             },
         )
-        try:
-            with urllib.request.urlopen(req) as resp:
-                payload = json.load(resp)
-        except (urllib.error.URLError, TimeoutError) as exc:
-            raise BackendError(f"openai request failed: {exc}") from exc
+        payload = _post_json(req)
+        u = payload.get("usage") or {}
+        self.usage["input_tokens"] += u.get("prompt_tokens", 0)
+        self.usage["output_tokens"] += u.get("completion_tokens", 0)
         try:
             choice = payload["choices"][0]
             if choice.get("finish_reason") == "length":
@@ -169,7 +195,13 @@ class AgentBackend:
         return False
 
     def _request(self, system: str, user: str) -> str:
-        result = subprocess.run(["claude", "-p", system + user], capture_output=True, text=True)
+        try:
+            result = subprocess.run(
+                ["claude", "-p", system + user],
+                capture_output=True, text=True, timeout=600,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise BackendError(f"agent session timed out: {exc}") from exc
         return result.stdout
 
     def complete(self, system: str, user: str, schema: dict | None = None) -> dict:
@@ -211,7 +243,9 @@ class ReplayBackend:
             "kind": self.inner.kind,
             "response": response,
         }
-        path.write_text(json.dumps(envelope))
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(json.dumps(envelope))
+        os.replace(tmp, path)
         self.provider = envelope["provider"]
         self.model = envelope["model"]
         return response

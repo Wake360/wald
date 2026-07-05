@@ -43,6 +43,17 @@ def test_leakage_flagged_through_derived_name():
     assert "leakage-fit-before-split" in flag_ids(notebook)
 
 
+def test_leakage_evidence_renders_names_plainly():
+    notebook = nb([
+        ("code", "X = scaler.fit_transform(X)"),
+        ("code", "X_tr, X_te, y_tr, y_te = train_test_split(X, y)"),
+    ])
+    ev = next(f.evidence for f in run_static(notebook)
+              if f.flaw_id == "leakage-fit-before-split")
+    assert "consumes X," in ev
+    assert "['X']" not in ev
+
+
 def test_multiple_testing_flagged_in_loop_without_correction():
     notebook = nb([
         ("code", "from scipy.stats import ttest_ind"),

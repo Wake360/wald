@@ -148,3 +148,13 @@ def test_assign_event_shares_call_identity():
     fits = [c for c in flow.calls if c.name == "fit_transform"]
     linked = [ev.call for ev in flow.assigns if ev.call is not None]
     assert len(fits) == 2 and fits[0] in linked and fits[1] in linked
+
+
+def test_oversized_cell_skipped():
+    from wald.dataflow import MAX_CELL_SOURCE_BYTES
+
+    big = "x = fit(y)\n" + "a = 1  # " + "A" * (MAX_CELL_SOURCE_BYTES + 1)
+    flow = analyze(nb_from_sources(big, "z = fit(w)"))
+    # oversized cell 0 is skipped, cell 1 is still analyzed
+    assert all(c.cell == 1 for c in flow.calls)
+    assert flow.parse_errors == []

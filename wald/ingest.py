@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import nbformat
+from nbformat.warnings import MissingIDFieldWarning
 
 
 @dataclass
@@ -51,7 +53,16 @@ def _coerce_source(value) -> str:
 
 
 def parse_notebook(path: str | Path) -> ParsedNotebook:
-    nb = nbformat.read(str(path), as_version=4)
+    with warnings.catch_warnings():
+        # valid older notebooks lack per-cell `id`; nbformat's read-time
+        # validate() warns about it, which is not a wald-level problem
+        warnings.simplefilter("ignore", MissingIDFieldWarning)
+        try:
+            nb = nbformat.read(str(path), as_version=4)
+        except TypeError as exc:
+            # e.g. "cells": null reaches rejoin_lines and iterates None;
+            # surface as ValueError so the CLI maps it to a clean exit 3
+            raise ValueError("not a valid notebook (malformed structure)") from exc
     return from_nbnode(nb, path=Path(path))
 
 

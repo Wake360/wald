@@ -24,11 +24,12 @@ def exit_code(flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
     return 2 if worst >= SEVERITY_ORDER[severity_gate] else 1
 
 
-def checked_classes(flags: list[Flag], floor: float) -> list[str]:
-    """Static classes checked and found clean (negative assurance)."""
+def checked_classes(flags: list[Flag]) -> list[str]:
+    """Static classes checked and found clean (negative assurance).
+    Any flag, at any confidence, disqualifies its class from clean."""
     from .detect import STATIC_DECIDABLE
 
-    flagged = {f.flaw_id for f in flags if f.confidence >= floor}
+    flagged = {f.flaw_id for f in flags}
     return sorted(STATIC_DECIDABLE - flagged)
 
 
@@ -46,7 +47,7 @@ def report_obj(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_F
         "notebook": path,
         "flags": [asdict(f) for f in flags if f.confidence >= floor],
         "candidates": [asdict(f) for f in flags if f.confidence < floor],
-        "clean_classes": checked_classes(flags, floor),
+        "clean_classes": checked_classes(flags),
         "parse_warning": warning,
         "exit_code": exit_code(flags, floor, severity_gate),
     }
@@ -70,6 +71,9 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
     n_high = sum(1 for f in confident if f.severity == "high")
     n_med = sum(1 for f in confident if f.severity == "medium")
     verdict = f"{n_high} high, {n_med} medium" if n_high + n_med else "clean"
+    if candidates:
+        n = len(candidates)
+        verdict += f", {n} candidate{'s' if n > 1 else ''} below floor"
     lines.append(f"verdict: {verdict} | static layer (no LLM)")
     if warning:
         lines.append(warning)
@@ -81,18 +85,18 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
             f"## {f.severity.upper()}: {f.flaw_id}",
             f"- **Where:** cell {f.cell}, line {f.line}",
             f"- **Evidence:** {f.evidence}",
-            f"- **Why it matters:** {d.definition}",
+            f"- **Flaw:** {d.definition}",
             f"- **Failure scenario:** {f.failure_scenario}",
             f"- **Fix:** {f.fix}",
             f"- **Confidence:** {f.confidence:.2f}",
             "",
         ]
     if candidates:
-        lines.append("## Candidates (below confidence floor, need narrative layer)")
+        lines.append(f"## Candidates (below confidence floor {floor:.2f})")
         for f in candidates:
             lines.append(f"- {f.flaw_id} (conf {f.confidence:.2f}, cell {f.cell}): {f.evidence}")
         lines.append("")
-    clean = checked_classes(flags, floor)
+    clean = checked_classes(flags)
     if clean:
         lines.append(f"## CLEAN (checked): {', '.join(clean)}")
         lines.append("")

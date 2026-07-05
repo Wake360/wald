@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 corpus = [
     "nbclient>=0.9",
+    "ipykernel",
     "numpy",
     "pandas",
     "scipy",
@@ -30,6 +31,9 @@ wald = "wald.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["wald*"]
+
+[tool.setuptools.package-data]
+wald = ["taxonomy/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
