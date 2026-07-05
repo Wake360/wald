@@ -197,9 +197,9 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
                     if not (on_chain or transforms_split_part):
                         continue
                     emit(call, 0.92, leaked, (
-                        f"`{call.func}(...)` consumes {sorted(leaked)}, which feed "
-                        f"`train_test_split` (cell {sink.cell}); the transformer "
-                        f"is fitted on data containing the test set"
+                        f"`{call.func}(...)` consumes {sorted(leaked)}, "
+                        f"feeding `train_test_split` (cell {sink.cell}) — "
+                        f"the fit happened before the split"
                     ))
                 else:
                     if not on_chain:

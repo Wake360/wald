@@ -162,21 +162,27 @@ def main(argv=None) -> int:
     p_check = sub.add_parser(
         "check",
         help="lint notebook(s); exit 0 clean / 1 medium / 2 high-severity / 3 input or usage error",
+        epilog="exit codes: 0 clean, 1 medium, 2 high, 3 input or usage error",
     )
     p_check.add_argument("notebooks", nargs="+")
     p_check.add_argument("--format", choices=["md", "json"], default="md",
                          help="json emits one object for a single notebook, a JSON array for several")
     p_check.add_argument("--floor", type=float, default=DEFAULT_CONFIDENCE_FLOOR,
-                         help="confidence floor in [0, 1]")
-    p_check.add_argument("--severity-gate", choices=["medium", "high"], default="high")
+                         help="confidence floor in [0, 1] (default: %(default)s); findings below "
+                              "it move to Candidates instead of Flags")
+    p_check.add_argument("--severity-gate", choices=["medium", "high"], default="high",
+                         help="exit 2 only at or above this severity (default: %(default)s); "
+                              "lower confident findings exit 1")
     p_check.add_argument("--llm", action="store_true",
                          help="add the narrative layer (needs API keys)")
     p_check.add_argument("--replay-dir", help="record/replay LLM responses here")
     p_check.set_defaults(func=cmd_check)
 
     p_eval = sub.add_parser("eval", help="run detectors over the corpus, write dated report")
-    p_eval.add_argument("--corpus", default="corpus")
-    p_eval.add_argument("--out", default="evals")
+    p_eval.add_argument("--corpus", default="corpus",
+                        help="corpus root directory (default: %(default)s)")
+    p_eval.add_argument("--out", default="evals",
+                        help="directory for dated eval reports (default: %(default)s)")
     p_eval.add_argument("--llm", action="store_true",
                         help="narrative-layer eval (needs API keys)")
     p_eval.add_argument("--split", choices=["dev", "heldout"], default="dev")
@@ -186,8 +192,11 @@ def main(argv=None) -> int:
     p_corpus = sub.add_parser("corpus", help="corpus operations")
     corpus_sub = p_corpus.add_subparsers(dest="corpus_command", required=True)
     p_build = corpus_sub.add_parser("build", help="build clean notebooks + verified mutants")
-    p_build.add_argument("--root", default="corpus")
-    p_build.add_argument("--seeds", nargs="+", type=int, default=[11, 12, 13, 14])
+    p_build.add_argument("--root", default="corpus",
+                         help="corpus root directory (default: %(default)s)")
+    p_build.add_argument("--seeds", nargs="+", type=int, default=[11, 12, 13, 14],
+                         help="dev-split base seeds, one clean notebook per family "
+                              "per seed (default: %(default)s)")
     p_build.set_defaults(func=cmd_corpus_build)
 
     args = parser.parse_args(argv)

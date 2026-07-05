@@ -20,18 +20,18 @@ recall number (needs ≥ 30 confirmed real flaws, we have 7).
   function-scoped target-correlation selection. Both need M2/M3, not more
   static heuristics — resist the urge.
 
-## 2. M2 — LLM narrative layer (planned; runs blocked on keys)
+## 2. M2 — LLM narrative layer (built key-free; gate runs blocked on keys)
 
 Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
-3-designer + 2-critic workflow). Key points:
+3-designer + 2-critic workflow). Status:
 
-- Phase 1 is key-free and buildable now: narrative mutations, held-out
-  split, negative corpus (one recipe mined from the 119 dogfood FPs),
-  backend seam, detector, verifier, fusion, eval extension — all tested
-  against replay fixtures.
-- Phase 3 needs TWO keys (Anthropic detector + OpenAI verifier;
-  cross-provider is a hard constraint). Projected spend ~$30–45 of the
-  $150 budget.
+- Built and tested key-free: narrative mutations, held-out split,
+  negative corpus (one recipe mined from the 119 dogfood FPs), backend
+  seam, detector, verifier, fusion, eval extension — all against replay
+  fixtures. Static-only stays the default and needs no key.
+- Remaining: the G2/G3 gate runs need TWO keys (Anthropic detector +
+  OpenAI verifier; cross-provider is a hard constraint). Projected spend
+  ~$30–45 of the $150 budget.
 - Only the three mutant-backed classes enter the prompt; pre-CV fusion
   ships FP-gated but recall-unclaimed; confidences are fixed constants,
   never the model's number; held-out contamination is structurally

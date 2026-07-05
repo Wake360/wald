@@ -69,7 +69,8 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
     lines = [f"# Wald report — {path}", ""]
     n_high = sum(1 for f in confident if f.severity == "high")
     n_med = sum(1 for f in confident if f.severity == "medium")
-    lines.append(f"verdict: {n_high} high, {n_med} medium | static layer (no LLM)")
+    verdict = f"{n_high} high, {n_med} medium" if n_high + n_med else "clean"
+    lines.append(f"verdict: {verdict} | static layer (no LLM)")
     if warning:
         lines.append(warning)
     lines.append("")

@@ -17,13 +17,13 @@ ask what data is missing and what that does to the conclusion.
 $ wald check examples/leaky.ipynb
 
 # Wald report — examples/leaky.ipynb
+
 verdict: 1 high, 0 medium | static layer (no LLM)
 
 ## HIGH: leakage-fit-before-split
 - **Where:** cell 5, line 2
-- **Evidence:** `scaler.fit_transform(...)` consumes ['X'], which feed
-  `train_test_split` (cell 5); the transformer is fitted on data containing
-  the test set
+- **Evidence:** `scaler.fit_transform(...)` consumes ['X'], feeding
+  `train_test_split` (cell 5) — the fit happened before the split
 - **Why it matters:** A transformation (scaler, imputer, encoder, feature
   selector, PCA, vectorizer) is fitted on data that contains the test set.
 - **Failure scenario:** Test metrics are inflated; the production model will
@@ -51,15 +51,18 @@ Detection quality is then a confusion matrix per flaw class, not an opinion:
 
 | class (static layer) | mutants | TP | FN | FP | precision | recall |
 |---|---|---|---|---|---|---|
-| leakage-fit-before-split | 12 | 12 | 0 | 0 | 1.00 | 1.00 |
-| testing-multiple-uncorrected | 40 | 40 | 0 | 0 | 1.00 | 1.00 |
-| baserate-accuracy-imbalanced | 4 | 4 | 0 | 0 | 1.00 | 1.00 |
-| selection-survivorship-cohort (candidate) | 8 | 8 | 0 | — | — | 1.00 |
+| leakage-fit-before-split | 24 | 24 | 0 | 0 | 1.00 | 1.00 |
+| testing-multiple-uncorrected | 96 | 96 | 0 | 0 | 1.00 | 1.00 |
+| baserate-accuracy-imbalanced | 8 | 8 | 0 | 0 | 1.00 | 1.00 |
+| selection-survivorship-cohort (candidate) | 16 | 16 | 0 | — | — | 1.00 |
 
-False-positive rate on the 47-notebook clean corpus (20 synthetic + 27
+False-positive rate on the 75-notebook clean corpus (48 synthetic + 27
 hand-reviewed real notebooks from Apache-2.0/MIT repositories): **0.0%**.
-64/64 mutants passed mechanical verification at build; 0 discarded.
-(Eval 2026-07-04, `evals/2026-07-04-eval.md`.)
+176/176 mutants passed mechanical verification at build; 0 discarded.
+32 of the 176 are narrative-only mutants (regression-to-mean-claim,
+significance-meaningless); they are scored by the `--llm` eval, not by
+this table, and no numbers are claimed for them until its gates run.
+(Eval 2026-07-05, `evals/2026-07-05-eval.json`.)
 
 Reproduce: `wald corpus build && wald eval`. Dated reports live in `evals/`.
 
@@ -118,16 +121,19 @@ notebook ──> ingest (nbformat) ──> layer A: static detectors ──> rep
                                     - deterministic, key-free      exit code
                                     - exact cell:line + evidence
 
-             layer B (planned, M2): LLM narrative detector
+             layer B (--llm): LLM narrative detector
              claims <-> computation consistency, closed taxonomy,
              span-grounded, verified by a second provider; fuses with
              layer A candidates (filter + population claim = flag)
 ```
 
 The hybrid split is the point: leakage is an AST pattern — an LLM has no
-business there. The LLM layer (M2) handles only what statics cannot:
-whether the prose claims match what the code computes. Until then Wald is
-a pure static tool; nothing here calls any API.
+business there. The LLM layer handles only what statics cannot: whether
+the prose claims match what the code computes. It is built and tested
+key-free against replay fixtures; its quality gates (G2/G3) have not run
+yet — they need Anthropic + OpenAI keys — so no narrative-layer numbers
+are claimed. Static-only is the default; without `--llm`, Wald calls no
+API.
 
 Taxonomy is data (`flaws.yaml`): 8 flaw classes with definition, book
 anchor, mutation recipe and severity. Adding a class = a record + a
@@ -140,7 +146,7 @@ documentation and detector cannot drift.
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[corpus,dev]"       # or: uv sync --all-extras
 
-wald check examples/leaky.ipynb      # exit 0 clean / 1 medium / 2 high / 3 input error
+wald check examples/leaky.ipynb      # exit 0 clean / 1 medium / 2 high / 3 input or usage error
 wald check examples/leaky.ipynb --format json   # one object; a JSON array for multiple notebooks
 wald corpus build                    # build clean corpus + verified mutants
 wald eval                            # confusion matrix -> evals/<date>-eval.md
@@ -156,10 +162,10 @@ time, to verify mutations.
 
 ## Roadmap
 
-- **M2** — LLM narrative layer + cross-provider verifier: survivorship
-  decision, regression-to-mean claims, significant-but-meaningless; fusion
-  rules in taxonomy. Gates: F1 ≥ 0.7, verifier kills ≥ 80% of seeded false
-  flags.
+- **M2** — LLM narrative layer + cross-provider verifier + fusion: built,
+  tested key-free against replay fixtures (`plans/m2.md`). Remaining: the
+  G2/G3 gate runs (F1 ≥ 0.7, verifier kills ≥ 80% of seeded false flags),
+  blocked on Anthropic + OpenAI keys.
 - **M3** — table consistency checks (cohort sums vs. declared population).
 - **M4** — GitHub Action with PR annotations, severity calibration.
   (Dogfood on real licensed notebooks: done, `evals/2026-07-04-dogfood.md`.)
