@@ -15,7 +15,7 @@ from .dataflow import analyze
 from .detect import DEFAULT_CONFIDENCE_FLOOR, run_static
 from .fuse import run_full_traced
 from .ingest import parse_notebook
-from .report import exit_code, parse_warning, report_obj, to_markdown, to_sarif
+from .report import _colorize, exit_code, parse_warning, report_obj, to_markdown, to_sarif
 
 # environment variable each api backend needs before it can make a request
 _KEY_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
@@ -70,6 +70,28 @@ def _missing_llm_keys(*backends) -> list[str]:
     return sorted(set(missing))
 
 
+class _EmptyDir(Exception):
+    """A directory argument contained no notebooks."""
+
+
+def _expand_notebooks(paths: list[str]) -> list[str]:
+    """Replace directory arguments with their *.ipynb files, recursive and
+    sorted, skipping .ipynb_checkpoints copies. File arguments pass through."""
+    expanded = []
+    for path in paths:
+        p = Path(path)
+        if not p.is_dir():
+            expanded.append(path)
+            continue
+        found = sorted(
+            str(q) for q in p.rglob("*.ipynb") if ".ipynb_checkpoints" not in q.parts
+        )
+        if not found:
+            raise _EmptyDir(path)
+        expanded.extend(found)
+    return expanded
+
+
 def _input_error(exc: Exception) -> str:
     if isinstance(exc, FileNotFoundError):
         return "no such file"
@@ -94,13 +116,32 @@ def cmd_check(args) -> int:
             print(f"wald: --llm needs {' and '.join(missing)} set in the environment",
                   file=sys.stderr)
             return 3
+    try:
+        notebooks = _expand_notebooks(args.notebooks)
+    except _EmptyDir as exc:
+        print(f"wald: {exc}: no .ipynb files found", file=sys.stderr)
+        return 3
+    # interactive-only chrome; the piped md/json/sarif bytes stay untouched
+    color = args.format == "md" and sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+    progress = args.llm and sys.stderr.isatty()
+
+    def close_progress():
+        # end the \r-overwritten line so errors/summaries start on a fresh one
+        if progress:
+            print(file=sys.stderr)
+
     reports = []
     sarif_entries = []
     worst = 0
-    for path in args.notebooks:
+    n_high = n_med = n_clean = 0
+    for i, path in enumerate(notebooks, 1):
+        if progress:
+            print(f"\rchecking {i}/{len(notebooks)} {path}", end="", file=sys.stderr,
+                  flush=True)
         if args.llm:
             refusal = _heldout_refusal(path, det, ver)
             if refusal:
+                close_progress()
                 print(f"wald: {refusal}", file=sys.stderr)
                 return 3
         try:
@@ -115,11 +156,13 @@ def cmd_check(args) -> int:
                     (d for d in narrative.dropped if d.startswith("backend error:")), None
                 )
                 if backend_error is not None:
+                    close_progress()
                     print(f"wald: narrative layer failed: {backend_error}", file=sys.stderr)
                     return 3
             else:
                 flags = run_static(nb, flow)
         except Exception as exc:
+            close_progress()
             print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
             return 3
         warning = parse_warning(len(flow.parse_errors), len(nb.code_cells))
@@ -128,13 +171,25 @@ def cmd_check(args) -> int:
         elif args.format == "sarif":
             sarif_entries.append((path, flags))
         else:
-            print(to_markdown(path, flags, args.floor, warning, args.llm))
+            text = to_markdown(path, flags, args.floor, warning, args.llm)
+            print(_colorize(text) if color else text)
+        confident = [f for f in flags if f.confidence >= args.floor]
+        if any(f.severity == "high" for f in confident):
+            n_high += 1
+        elif any(f.severity == "medium" for f in confident):
+            n_med += 1
+        else:
+            n_clean += 1
         worst = max(worst, exit_code(flags, args.floor, args.severity_gate))
+    close_progress()
     if args.format == "json":
         # one bare object for a single notebook (back-compat), an array for many
         print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
     elif args.format == "sarif":
         print(to_sarif(sarif_entries, args.floor))
+    elif len(notebooks) > 1 and sys.stdout.isatty():
+        print(f"checked {len(notebooks)} notebooks: {n_high} high, {n_med} medium, "
+              f"{n_clean} clean", file=sys.stderr)
     return worst
 
 
@@ -193,7 +248,9 @@ def main(argv=None) -> int:
         help="lint notebook(s); exit 0 clean / 1 medium / 2 high-severity / 3 input or usage error",
         epilog="exit codes: 0 clean, 1 medium, 2 high, 3 input or usage error",
     )
-    p_check.add_argument("notebooks", nargs="+")
+    p_check.add_argument("notebooks", nargs="+",
+                         help="notebook files or directories (searched recursively "
+                              "for *.ipynb, skipping .ipynb_checkpoints)")
     p_check.add_argument("--format", choices=["md", "json", "sarif"], default="md",
                          help="json emits one object for a single notebook, a JSON array for "
                               "several; sarif emits one SARIF 2.1.0 log for the whole invocation")

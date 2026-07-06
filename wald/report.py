@@ -14,6 +14,21 @@ SEVERITY_ORDER = {"info": 0, "medium": 1, "high": 2}
 SARIF_LEVEL = {"high": "error", "medium": "warning"}
 
 
+def _colorize(text: str) -> str:
+    """ANSI-decorate report header lines for interactive terminals.
+    Never on the piped path: callers gate on isatty and NO_COLOR."""
+    lines = []
+    for line in text.split("\n"):
+        if line.startswith("## HIGH:"):
+            line = f"\033[31m{line}\033[0m"
+        elif line.startswith("## MEDIUM:"):
+            line = f"\033[33m{line}\033[0m"
+        elif line.startswith("## CLEAN (checked):"):
+            line = f"\033[2m{line}\033[0m"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def exit_code(flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
               severity_gate: str = "high") -> int:
     """0 = clean, 1 = medium findings, 2 = at or above the gate severity.
