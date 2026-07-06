@@ -18,7 +18,6 @@ jobs:
       - run: uv sync --locked --extra corpus --extra dev
       - run: uvx ruff check wald/ tests/
       - run: uvx pyright wald/
-        continue-on-error: true
       # unit tests: fast, no kernel execution
       - run: uv run pytest tests/ --ignore=tests/test_gates.py -q
       # golden gates G0+G1: rebuild the corpus from scratch (mutation verify
