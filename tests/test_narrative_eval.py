@@ -247,6 +247,26 @@ def test_evaluate_narrative_continues_past_backend_error(mini):
     assert res["gate_evidence"] is False
 
 
+def test_eval_progress_lines(mini, monkeypatch, capsys):
+    import sys
+
+    monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
+    det = DetStub(mini["det_routes"])
+    ver = VerStub(mini["support"])
+    evaluate_narrative(mini["root"], det, ver, split="dev")
+    err = capsys.readouterr().err
+    # 2 mutants + 1 clean in the mini corpus: all three ticks appear
+    assert "checking 1/3" in err
+    assert "checking 3/3" in err
+
+
+def test_eval_progress_absent_when_piped(mini, capsys):
+    det = DetStub(mini["det_routes"])
+    ver = VerStub(mini["support"])
+    evaluate_narrative(mini["root"], det, ver, split="dev")
+    assert "checking" not in capsys.readouterr().err
+
+
 def test_heldout_raises_before_any_call(mini):
     det = DetStub(mini["det_routes"])
     ver = VerStub(mini["support"])

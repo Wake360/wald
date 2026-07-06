@@ -7,6 +7,7 @@ whole corpus and writes a dated report; gates G0/G1 assert on its output.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from .corpus import _build_date
@@ -237,10 +238,31 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         kept = {id(f) for f in derived}
         return derived, fused, kept
 
-    for entry in manifest["mutants"]:
-        if entry["split"] != split or entry["flaw_id"] not in per_class:
-            continue
+    mutant_entries = [e for e in manifest["mutants"]
+                      if e["split"] == split and e["flaw_id"] in per_class]
+    clean_entries = [e for e in manifest["clean"] if e["split"] == split]
+    n_real = 0
+    real_manifest = root / "real" / "MANIFEST.json"
+    if split == "heldout" and real_manifest.exists():
+        real_clean = json.loads(real_manifest.read_text())["clean"]
+        n_real = len(real_clean)
+        clean_entries = clean_entries + real_clean
+
+    # per-notebook progress on interactive runs only; API calls make each
+    # iteration take seconds, and a silent terminal reads as a hang
+    n_total = len(mutant_entries) + len(clean_entries)
+    n_done = 0
+
+    def tick(file):
+        nonlocal n_done
+        n_done += 1
+        if sys.stderr.isatty():
+            print(f"\rchecking {n_done}/{n_total} {file}", end="", file=sys.stderr,
+                  flush=True)
+
+    for entry in mutant_entries:
         label = entry["flaw_id"]
+        tick(entry["file"])
         try:
             flags, fused, kept = narrative_flags(entry["file"])
         except BackendError as exc:
@@ -259,14 +281,8 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
                 survival["total"] += 1
                 survival["supported"] += id(f) in kept
 
-    clean_entries = [e for e in manifest["clean"] if e["split"] == split]
-    n_real = 0
-    real_manifest = root / "real" / "MANIFEST.json"
-    if split == "heldout" and real_manifest.exists():
-        real_clean = json.loads(real_manifest.read_text())["clean"]
-        n_real = len(real_clean)
-        clean_entries = clean_entries + real_clean
     for entry in clean_entries:
+        tick(entry["file"])
         try:
             flags, _, _ = narrative_flags(entry["file"])
         except BackendError as exc:
@@ -278,6 +294,8 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
                 per_class[f.flaw_id]["fp"] += 1
         if confident:
             clean_fp_files.append(entry["file"])
+    if n_done and sys.stderr.isatty():
+        print(file=sys.stderr)
 
     g3 = {}
     neg = json.loads((root / "negative" / "MANIFEST.json").read_text())
