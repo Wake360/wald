@@ -123,6 +123,63 @@ is invisible to any tool that reads notebooks. Wald claims only the
 detectable classes, and the taxonomy (`wald/taxonomy/flaws.yaml`) is the
 complete, versioned list of what it checks.
 
+## GitHub Action
+
+`Wake360/wald@v0.2.1` is a composite action that installs `wald-lint`, runs
+`wald check` on the paths you pass, writes a SARIF 2.1.0 log, and reports a
+`gate-exit-code` mapped through `fail-on` (high, medium, or never). The
+action never fails the job itself — it exposes the code and lets your
+workflow upload SARIF before gating, so findings show up as inline PR
+annotations even on a red run. The consumer must grant `security-events:
+write` for the SARIF upload, put Python >= 3.10 on `PATH` (via
+`actions/setup-python`), and run on a Linux or macOS runner (the steps are
+bash).
+
+```yaml
+name: wald
+on: [pull_request]
+
+jobs:
+  check-notebooks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Find changed notebooks
+        id: changed
+        run: |
+          files=$(git diff --name-only \
+            origin/${{ github.base_ref }}...${{ github.sha }} -- '*.ipynb')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: wald
+        id: wald
+        if: steps.changed.outputs.files != ''
+        uses: Wake360/wald@v0.2.1
+        with:
+          paths: ${{ steps.changed.outputs.files }}
+          fail-on: high
+
+      - name: Upload SARIF
+        if: always() && steps.changed.outputs.files != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.wald.outputs.sarif-file }}
+
+      - name: Gate on wald
+        if: steps.changed.outputs.files != ''
+        run: exit ${{ steps.wald.outputs.gate-exit-code }}
+```
+
 ## Architecture
 
 ```
