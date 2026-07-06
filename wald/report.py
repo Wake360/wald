@@ -62,7 +62,7 @@ def to_json(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOO
 
 
 def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_FLOOR,
-                warning: str | None = None) -> str:
+                warning: str | None = None, llm: bool = False) -> str:
     taxonomy = load_taxonomy()
     confident = sorted(
         (f for f in flags if f.confidence >= floor),
@@ -77,7 +77,12 @@ def to_markdown(path: str, flags: list[Flag], floor: float = DEFAULT_CONFIDENCE_
     if candidates:
         n = len(candidates)
         verdict += f", {n} candidate{'s' if n > 1 else ''} below floor"
-    lines.append(f"verdict: {verdict} | static layer (no LLM)")
+    provenance = (
+        "static + narrative layers"
+        if llm or any(f.extra.get("narrative_derived") for f in flags)
+        else "static layer (no LLM)"
+    )
+    lines.append(f"verdict: {verdict} | {provenance}")
     if warning:
         lines.append(warning)
     lines.append("")

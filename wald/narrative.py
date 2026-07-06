@@ -315,9 +315,9 @@ def _ground_finding(raw, nb, enabled, taxonomy, dropped):
     d = taxonomy[flaw_id]
     return NarrativeFinding(
         flaw_id=flaw_id,
-        claim_cell=claim_cell,
+        claim_cell=md.index,
         claim_quote=claim_quote,
-        code_cell=code_cell,
+        code_cell=cc.index,
         code_line_start=span[0],
         code_line_end=span[1],
         code_quote=code_quote,
@@ -332,6 +332,12 @@ def detect_narrative(nb: ParsedNotebook, backend) -> NarrativeResult:
     user = package_notebook(nb)
     try:
         raw = backend.complete(system, user, NARRATIVE_SCHEMA)
+        if not isinstance(raw, dict) or (
+            not isinstance(raw.get("claims"), list)
+            and not isinstance(raw.get("findings"), list)
+        ):
+            keys = ", ".join(sorted(raw)) if isinstance(raw, dict) else type(raw).__name__
+            raise BackendError(f"response did not match schema: {keys}")
     except BackendError as exc:
         return NarrativeResult(claims=[], findings=[], dropped=[f"backend error: {exc}"])
 

@@ -137,7 +137,7 @@ def test_candidate_class_not_certified_clean():
     data = json.loads(to_json("nb.ipynb", [cand]))
     assert "leakage-fit-before-split" not in data["clean_classes"]
     md = to_markdown("nb.ipynb", [cand])
-    clean_line = next(l for l in md.splitlines() if l.startswith("## CLEAN"))
+    clean_line = next(line for line in md.splitlines() if line.startswith("## CLEAN"))
     assert "leakage-fit-before-split" not in clean_line
 
 
@@ -145,6 +145,26 @@ def test_verdict_and_header_acknowledge_candidates():
     md = to_markdown("nb.ipynb", [flag(confidence=0.55)])
     assert "verdict: clean, 1 candidate below floor | static layer (no LLM)" in md
     assert "## Candidates (below confidence floor 0.80)" in md
+
+
+def test_provenance_static_only_by_default():
+    md = to_markdown("nb.ipynb", [flag()])
+    assert "static layer (no LLM)" in md
+    assert "static + narrative layers" not in md
+
+
+def test_provenance_llm_run_marks_narrative_layers():
+    md = to_markdown("nb.ipynb", [flag()], llm=True)
+    assert "static + narrative layers" in md
+    assert "static layer (no LLM)" not in md
+
+
+def test_provenance_narrative_derived_flag_marks_narrative_layers():
+    # even without the llm flag, a narrative-derived flag proves the layer ran
+    f = flag()
+    f.extra["narrative_derived"] = True
+    md = to_markdown("nb.ipynb", [f])
+    assert "static + narrative layers" in md
 
 
 def test_definition_bullet_labeled_flaw():

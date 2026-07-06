@@ -13,6 +13,7 @@ from nbformat.reader import NotJSONError
 
 from .dataflow import analyze
 from .detect import DEFAULT_CONFIDENCE_FLOOR, run_static
+from .fuse import run_full_traced
 from .ingest import parse_notebook
 from .report import exit_code, parse_warning, report_obj, to_markdown, to_sarif
 
@@ -85,9 +86,8 @@ def cmd_check(args) -> int:
     if not 0.0 <= args.floor <= 1.0:
         print(f"wald: --floor must be between 0 and 1 (got {args.floor})", file=sys.stderr)
         return 3
+    det = ver = None
     if args.llm:
-        from .fuse import run_full
-
         det, ver = _llm_backends(args.replay_dir)
         missing = _missing_llm_keys(det, ver)
         if missing:
@@ -105,18 +105,30 @@ def cmd_check(args) -> int:
                 return 3
         try:
             nb = parse_notebook(path)
+            flow = analyze(nb)
+            if args.llm:
+                flags, narrative, _ = run_full_traced(nb, det, ver)
+                # a detector/verifier outage fails closed inside detect_narrative
+                # (empty result tagged in `dropped`); surface it so a broken
+                # backend can never read like a clean notebook.
+                backend_error = next(
+                    (d for d in narrative.dropped if d.startswith("backend error:")), None
+                )
+                if backend_error is not None:
+                    print(f"wald: narrative layer failed: {backend_error}", file=sys.stderr)
+                    return 3
+            else:
+                flags = run_static(nb, flow)
         except Exception as exc:
             print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
             return 3
-        flow = analyze(nb)
-        flags = run_full(nb, det, ver) if args.llm else run_static(nb, flow)
         warning = parse_warning(len(flow.parse_errors), len(nb.code_cells))
         if args.format == "json":
             reports.append(report_obj(path, flags, args.floor, args.severity_gate, warning))
         elif args.format == "sarif":
             sarif_entries.append((path, flags))
         else:
-            print(to_markdown(path, flags, args.floor, warning))
+            print(to_markdown(path, flags, args.floor, warning, args.llm))
         worst = max(worst, exit_code(flags, args.floor, args.severity_gate))
     if args.format == "json":
         # one bare object for a single notebook (back-compat), an array for many

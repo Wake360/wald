@@ -12,17 +12,20 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e .[corpus,dev]
+      - run: uv sync --locked --extra corpus --extra dev
+      - run: uvx ruff check wald/ tests/
+      - run: uvx pyright wald/
+        continue-on-error: true
       # unit tests: fast, no kernel execution
-      - run: pytest tests/ --ignore=tests/test_gates.py -q
+      - run: uv run pytest tests/ --ignore=tests/test_gates.py -q
       # golden gates G0+G1: rebuild the corpus from scratch (mutation verify
       # executes notebooks) and assert precision/recall/FP thresholds
-      - run: wald corpus build --root corpus
-      - run: pytest tests/test_gates.py -q
-      - run: wald eval --corpus corpus --out evals
+      - run: uv run wald corpus build --root corpus
+      - run: uv run pytest tests/test_gates.py -q
+      - run: uv run wald eval --corpus corpus --out evals
       - uses: actions/upload-artifact@v4
         with:
           name: eval-report-${{ matrix.python-version }}

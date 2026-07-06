@@ -9,6 +9,7 @@ import pytest
 
 from wald.corpus import (
     FAMILIES,
+    _build_date,
     abtest_notebook,
     churn_notebook,
     cohort_notebook,
@@ -45,11 +46,11 @@ def test_fit_before_split_reorders_statements():
     assert m.applicable(clean)
     mutant = m.apply(clean, 0)
     lines = mutant.cells[5]["source"].splitlines()
-    fit_line = next(i for i, l in enumerate(lines) if "fit_transform" in l)
-    split_line = next(i for i, l in enumerate(lines) if "train_test_split" in l)
+    fit_line = next(i for i, line in enumerate(lines) if "fit_transform" in line)
+    split_line = next(i for i, line in enumerate(lines) if "train_test_split" in line)
     assert fit_line < split_line
     assert "X = scaler.fit_transform(X)" in lines[fit_line]
-    assert not any(".transform(X_te)" in l for l in lines)
+    assert not any(".transform(X_te)" in line for line in lines)
 
 
 def test_multiple_testing_inserts_uncorrected_loop():
@@ -259,3 +260,12 @@ def test_evaluate_missing_corpus_raises_systemexit(tmp_path):
 
     with pytest.raises(SystemExit):
         evaluate(tmp_path / "nonexistent-corpus")
+
+
+def test_build_date_env_override(monkeypatch):
+    from datetime import date
+
+    monkeypatch.setenv("WALD_BUILD_DATE", "2020-01-01")
+    assert _build_date() == "2020-01-01"
+    monkeypatch.delenv("WALD_BUILD_DATE")
+    assert _build_date() == date.today().isoformat()

@@ -11,11 +11,15 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e .[corpus,dev]
-      - run: pytest tests/ --ignore=tests/test_gates.py -q
+      - run: uv sync --locked --extra corpus --extra dev
+      - run: uv run wald corpus build --root corpus
+      # a release must never publish with G0/G1 silently skipped
+      - run: test -f corpus/MANIFEST.json
+      - run: uv run pytest tests/ -q
+      - run: uv run wald eval --corpus corpus --out evals
 
   publish:
     needs: test

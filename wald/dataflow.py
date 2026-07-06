@@ -11,10 +11,12 @@ not modeled as notebook-level bindings.
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 from dataclasses import dataclass, field
+from typing import cast
 
 import libcst as cst
-from libcst.metadata import MetadataWrapper, PositionProvider
+from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
 from .ingest import ParsedNotebook
 
@@ -34,6 +36,15 @@ _WRAPPER_MAGIC_RE = re.compile(r"^%%?(?:time|timeit|prun)\s+(?![-%!])(.+)$")
 # cell (e.g. a 10MB generated paste) can dominate runtime. Skip cells past
 # this size — far above any real analysis cell — so one cell cannot hang a run.
 MAX_CELL_SOURCE_BYTES = 200_000
+
+# cst.parse_module recurses natively per level of expression nesting, and a deep
+# enough tree overflows the native stack (an uncatchable SIGSEGV) before any
+# Python-level guard can fire. Nesting is driven not only by bracket/paren/brace
+# depth but by attribute chains (a.b.c), subscript/call chains (a[0][0], f()()),
+# and operators — all of which _structural_depth counts. A cell above this bound
+# is skipped before parse_module ever sees it. 500 is far above any real notebook
+# (dense method chains run well under 100) and far below the native crash point.
+MAX_CELL_NEST_DEPTH = 500
 
 _NON_PYTHON_CELL_MAGICS = {
     "%%writefile", "%%file", "%%bash", "%%sh", "%%script", "%%cmd",
@@ -138,38 +149,38 @@ class _CellVisitor(cst.CSTVisitor):
         self._loop_vars: list[set[str]] = []  # target names per enclosing for-loop
 
     def _line(self, node: cst.CSTNode) -> int:
-        return self.get_metadata(PositionProvider, node).start.line
+        return cast(CodeRange, self.get_metadata(PositionProvider, node)).start.line
 
     def visit_For(self, node: cst.For) -> None:
         self.loop_depth += 1
         self._loop_vars.append(_target_names(node.target))
 
-    def leave_For(self, node: cst.For) -> None:
+    def leave_For(self, original_node: cst.For) -> None:
         self.loop_depth -= 1
         self._loop_vars.pop()
 
     def visit_While(self, node: cst.While) -> None:
         self.loop_depth += 1
 
-    def leave_While(self, node: cst.While) -> None:
+    def leave_While(self, original_node: cst.While) -> None:
         self.loop_depth -= 1
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         self.scope_depth += 1
 
-    def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
         self.scope_depth -= 1
 
     def visit_Lambda(self, node: cst.Lambda) -> None:
         self.scope_depth += 1
 
-    def leave_Lambda(self, node: cst.Lambda) -> None:
+    def leave_Lambda(self, original_node: cst.Lambda) -> None:
         self.scope_depth -= 1
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.scope_depth += 1
 
-    def leave_ClassDef(self, node: cst.ClassDef) -> None:
+    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.scope_depth -= 1
 
     def _call_site(self, node: cst.Call, line: int) -> CallSite | None:
@@ -209,7 +220,7 @@ class _CellVisitor(cst.CSTVisitor):
             ev.call = site  # identity-shared: detect can test `ev.call is call`
 
     def _record_assign(self, targets: set[str], value: cst.BaseExpression, node: cst.CSTNode,
-                       extra_sources: set[str] = frozenset()) -> None:
+                       extra_sources: Collection[str] = frozenset()) -> None:
         if self.scope_depth > 0:
             return  # function/class locals do not rebind notebook names
         ev = AssignEvent(
@@ -318,27 +329,78 @@ class NotebookDataflow:
         return (name, id(ev) if ev is not None else None)
 
 
+_DEPTH_OPERATOR_CHARS = frozenset("*/%@<>&|^~")
+
+
+def _structural_depth(source: str) -> int:
+    """A sound upper bound on the AST expression-nesting depth of ``source``.
+
+    Every level libcst recurses through is introduced by at least one opening
+    bracket, an attribute dot, or an operator. These are counted cumulatively
+    within a statement: left-associative chains such as ``a[0][0][0]`` and
+    ``a.b.c`` do not nest lexically (bracket depth stays flat) but do nest in the
+    AST, so opens are never decremented — the running count only resets at a
+    statement boundary (a newline or ``;`` outside brackets). Numeric literals
+    (``-1``, ``1e-5``, ``3.14``) are excluded so ordinary data does not trip the
+    guard. Over-approximate by design: a flagged cell is skipped, never parsed.
+    """
+    peak = 0
+    run = 0
+    bracket = 0
+    prev = ""
+    n = len(source)
+    for i, ch in enumerate(source):
+        drive = False
+        if ch in "([{":
+            bracket += 1
+            drive = True
+        elif ch in ")]}":
+            if bracket > 0:
+                bracket -= 1
+        elif ch == ".":
+            drive = not prev.isdigit()  # attribute access, not a float point
+        elif ch in _DEPTH_OPERATOR_CHARS:
+            drive = True
+        elif ch in "+-":
+            nxt = source[i + 1] if i + 1 < n else ""
+            drive = not nxt.isdigit()  # binary operator, not a signed/exponent literal
+        elif ch in "\n;" and bracket == 0:
+            run = 0
+        if drive:
+            run += 1
+            if run > peak:
+                peak = run
+        if not ch.isspace():
+            prev = ch
+    return peak
+
+
 def analyze(nb: ParsedNotebook) -> NotebookDataflow:
     flow = NotebookDataflow()
     for cell in nb.code_cells:
         if len(cell.source) > MAX_CELL_SOURCE_BYTES:
             continue  # oversized cell: skip to keep runtime bounded
+        if _structural_depth(cell.source) > MAX_CELL_NEST_DEPTH:
+            continue  # deep nesting overflows the native parser stack: skip
         # valid Python first: a leading "%" can be a formatting continuation
         # line, not a magic, and stripping it would break the parse
         try:
-            module = cst.parse_module(cell.source)
-        except cst.ParserSyntaxError:
             try:
-                module = cst.parse_module(_strip_magics(cell.source))
+                module = cst.parse_module(cell.source)
             except cst.ParserSyntaxError:
-                first_word = cell.source.lstrip().split(None, 1)[0] if cell.source.strip() else ""
-                if first_word in _NON_PYTHON_CELL_MAGICS:
-                    continue  # body is not Python by design; not an error
-                flow.parse_errors.append(cell.index)
-                continue
-        wrapper = MetadataWrapper(module)
-        visitor = _CellVisitor(cell.index)
-        wrapper.visit(visitor)
+                try:
+                    module = cst.parse_module(_strip_magics(cell.source))
+                except cst.ParserSyntaxError:
+                    first_word = cell.source.lstrip().split(None, 1)[0] if cell.source.strip() else ""
+                    if first_word in _NON_PYTHON_CELL_MAGICS:
+                        continue  # body is not Python by design; not an error
+                    flow.parse_errors.append(cell.index)
+                    continue
+            wrapper = MetadataWrapper(module)
+            visitor = _CellVisitor(cell.index)
+            wrapper.visit(visitor)
+        except RecursionError:
+            continue  # deep expression tree exhausts the recursion limit: skip
         flow.calls.extend(visitor.calls)
         flow.assigns.extend(visitor.assigns)
     return flow

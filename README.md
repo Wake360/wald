@@ -56,6 +56,9 @@ Detection quality is then a confusion matrix per flaw class, not an opinion:
 
 False-positive rate on the 83-notebook clean corpus (56 synthetic + 27
 hand-reviewed real notebooks from Apache-2.0/MIT repositories): **0.0%**.
+The 27 real notebooks also shaped the static layer during dogfood (the
+rebuild described below), so this is not an out-of-sample test for them —
+the real-notebook share of the 0.0% leans optimistic.
 192/192 mutants passed mechanical verification at build; 0 discarded.
 32 of the 192 are narrative-only mutants (regression-to-mean-claim,
 significance-meaningless); they are scored by the `--llm` eval, not by
@@ -63,6 +66,7 @@ this table, and no numbers are claimed for them until its gates run.
 (Eval 2026-07-05, `evals/2026-07-05-eval.json`.)
 
 Reproduce: `wald corpus build && wald eval`. Dated reports live in `evals/`.
+Set `WALD_BUILD_DATE=YYYY-MM-DD` to pin the manifest/report date for a byte-identical rebuild.
 
 **Dogfooded on real notebooks** (`evals/2026-07-04-dogfood.md`): the first
 run on 34 real notebooks produced a 50% file flag rate — 119 of 124 flags
@@ -149,6 +153,13 @@ documentation and detector cannot drift.
 ## Install & use
 
 ```bash
+pip install wald-lint
+wald check notebook.ipynb            # exit 0 clean / 1 medium / 2 high / 3 input or usage error
+```
+
+Contributing to Wald itself:
+
+```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[corpus,dev]"       # or: uv sync --all-extras
 
@@ -175,9 +186,9 @@ time, to verify mutations.
 - **M3** — table consistency checks (cohort sums vs. declared population).
 - **M4** — GitHub Action with PR annotations, severity calibration.
   (Dogfood on real licensed notebooks: done, `evals/2026-07-04-dogfood.md`.)
-- Corpus contributions welcome: a clean notebook must satisfy the clean
-  criteria in `wald/corpus.py` and pass review; a new flaw class needs a
-  taxonomy record, a detector, and a mutation with mechanical `verify()`.
+- Corpus contributions welcome: see `CONTRIBUTING.md` for the clean-corpus
+  criteria, real-notebook licensing rules, and the flaw-class contribution
+  shape (taxonomy record, detector, mutation with mechanical `verify()`).
 
 ## License
 

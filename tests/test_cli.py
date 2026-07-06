@@ -4,12 +4,81 @@ from pathlib import Path
 import pytest
 
 from wald.cli import main
+from wald.llm import BackendError
+
+LEAKY = str(Path(__file__).parent.parent / "examples" / "leaky.ipynb")
 
 
 def _write(tmp_path, name, text):
     p = tmp_path / name
     p.write_text(text)
     return str(p)
+
+
+class _Det:
+    provider = "anthropic"
+    model = "det"
+    kind = "api"
+
+    @property
+    def gate_eligible(self):
+        return True
+
+    def complete(self, system, user, schema=None):
+        raise BackendError("upstream 503")
+
+
+class _Ver:
+    provider = "openai"
+    model = "ver"
+    kind = "api"
+
+    @property
+    def gate_eligible(self):
+        return True
+
+    def complete(self, system, user, schema=None):
+        return {"verdict": "unsupported", "reason": "x"}
+
+
+class _OkDet:
+    provider = "anthropic"
+    model = "det"
+    kind = "api"
+
+    @property
+    def gate_eligible(self):
+        return True
+
+    def complete(self, system, user, schema=None):
+        return {"claims": [], "findings": []}
+
+
+def test_cli_llm_run_reports_narrative_provenance(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "y")
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_OkDet(), _Ver()))
+    nb = {"cells": [
+        {"cell_type": "code", "source": "x = 1\n", "outputs": [],
+         "execution_count": None, "metadata": {}},
+    ], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}
+    p = _write(tmp_path, "clean.ipynb", json.dumps(nb))
+    rc = main(["check", "--llm", p])
+    out = capsys.readouterr().out
+    assert "static + narrative layers" in out  # provenance reflects the --llm run
+    assert rc == 0
+
+
+def test_cli_llm_backend_failure_exits_3_fail_loud(monkeypatch, capsys):
+    # an api outage during `check --llm` must not read like a clean notebook:
+    # the dropped backend error propagates to the CLI, which exits 3.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "y")
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_Det(), _Ver()))
+    assert main(["check", "--llm", LEAKY]) == 3
+    err = capsys.readouterr().err
+    assert "narrative layer failed" in err
+    assert "Traceback" not in err
 
 
 def test_valid_json_missing_cells_exits_3(tmp_path, capsys):

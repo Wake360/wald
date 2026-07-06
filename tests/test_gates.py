@@ -9,7 +9,7 @@ import pytest
 
 from wald.corpus import MUTATION_SEEDS
 from wald.detect import run_static
-from wald.eval import evaluate, render_report
+from wald.eval import REAL_FP_CAVEAT, evaluate, render_report
 from wald.ingest import parse_notebook
 
 CORPUS = Path(__file__).parent.parent / "corpus"
@@ -195,6 +195,18 @@ def test_g1_temporal_zero_flags_on_real():
     for f in sorted((CORPUS / "real").glob("*.ipynb")):
         flags = run_static(parse_notebook(f))
         assert not any(fl.flaw_id == "leakage-temporal-shuffle" for fl in flags), f
+
+
+def test_g1_report_date_pinned_by_env(monkeypatch):
+    monkeypatch.setenv("WALD_BUILD_DATE", "1999-12-31")
+    results = evaluate(CORPUS)
+    assert results["date"] == "1999-12-31"
+
+
+def test_g1_real_fp_caveat_appears_when_real_notebooks_present():
+    results = evaluate(CORPUS)
+    assert results["n_clean_real"] > 0
+    assert REAL_FP_CAVEAT in render_report(results)
 
 
 def test_g1_survivorship_candidate_recall():

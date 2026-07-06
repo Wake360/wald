@@ -7,9 +7,9 @@ whole corpus and writes a dated report; gates G0/G1 assert on its output.
 from __future__ import annotations
 
 import json
-from datetime import date
 from pathlib import Path
 
+from .corpus import _build_date
 from .detect import DEFAULT_CONFIDENCE_FLOOR, STATIC_DECIDABLE, run_static
 from .ingest import parse_notebook
 from .llm import PINNED_DETECTOR_MODEL, PINNED_VERIFIER_MODEL, BackendError
@@ -80,7 +80,7 @@ def evaluate(corpus_root: str | Path, floor: float = DEFAULT_CONFIDENCE_FLOOR,
 
     n_clean = len(manifest["clean"])
     results = {
-        "date": date.today().isoformat(),
+        "date": _build_date(),
         "corpus_built": manifest["built"],
         "n_clean": n_clean,
         "n_clean_real": n_real,
@@ -158,6 +158,8 @@ def render_report(results: dict) -> str:
         "- Survivorship is reported as candidate recall only — the static "
         "half cannot decide it (the flaw is the pair filter+claim).",
     ]
+    if results.get("n_clean_real", 0):
+        lines.append(f"- {REAL_FP_CAVEAT}.")
     return "\n".join(lines)
 
 
@@ -298,7 +300,7 @@ def evaluate_narrative(corpus_root: str | Path, det_backend, ver_backend,
         r["kill_rate"] = r["killed"] / r["total"] if r["total"] else None
 
     return {
-        "date": date.today().isoformat(),
+        "date": _build_date(),
         "corpus_built": manifest["built"],
         "split": split,
         "confidence_floor": floor,

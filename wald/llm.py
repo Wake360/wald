@@ -24,6 +24,7 @@ PINNED_VERIFIER_MODEL = "gpt-4.1-2025-04-14"
 MAX_TOKENS = 8192
 HTTP_TIMEOUT = 120
 RETRY_AFTER_DEFAULT = 20.0
+TRANSPORT_RETRY_PAUSE = 5.0
 
 
 class BackendError(Exception):
@@ -53,7 +54,8 @@ def _strip_fences(text: str) -> str:
 
 def _post_json(req: urllib.request.Request) -> dict:
     """POST returning parsed JSON. Retry once on 429/5xx after Retry-After
-    (or ~20s); any other transport failure becomes a BackendError."""
+    (or ~20s), and once on a transport failure (URLError/TimeoutError) after a
+    ~5s pause; a persistent failure becomes a BackendError."""
     for attempt in (0, 1):
         try:
             with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
@@ -66,6 +68,9 @@ def _post_json(req: urllib.request.Request) -> dict:
                 continue
             raise BackendError(f"request failed: http {exc.code}: {exc}") from exc
         except (urllib.error.URLError, TimeoutError) as exc:
+            if attempt == 0:
+                time.sleep(TRANSPORT_RETRY_PAUSE)
+                continue
             raise BackendError(f"request failed: {exc}") from exc
 
 
@@ -197,11 +202,16 @@ class AgentBackend:
     def _request(self, system: str, user: str) -> str:
         try:
             result = subprocess.run(
-                ["claude", "-p", system + user],
+                ["claude", "-p"],
+                input=system + user,
                 capture_output=True, text=True, timeout=600,
             )
         except subprocess.TimeoutExpired as exc:
             raise BackendError(f"agent session timed out: {exc}") from exc
+        if result.returncode != 0:
+            raise BackendError(
+                f"agent session failed (exit {result.returncode}): {result.stderr[:500]}"
+            )
         return result.stdout
 
     def complete(self, system: str, user: str, schema: dict | None = None) -> dict:

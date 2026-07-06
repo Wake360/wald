@@ -1,8 +1,8 @@
 """Corpus builder: 6 clean analysis families x dev + held-out seeds, plus
 verified mutants and seeded false flags (G3 substrate).
 
-Clean notebooks satisfy the clean-corpus criteria (see README): scoped
-claims, split-before-fit, corrected or <=3 tests, >=2 classification
+Clean notebooks satisfy the clean-corpus criteria (see CONTRIBUTING.md):
+scoped claims, split-before-fit, corrected or <=3 tests, >=2 classification
 metrics, imbalance stated, no extrapolation. They are executed at build
 time so stored outputs (value_counts etc.) are available as detector
 evidence. Synthetic by design in v1 — licensed real notebooks are a
@@ -17,6 +17,7 @@ during prompt iteration (risk R3).
 from __future__ import annotations
 
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -24,6 +25,11 @@ import nbformat
 
 from . import execute as ex
 from .mutate import MUTATIONS
+
+
+def _build_date() -> str:
+    """Pinned via WALD_BUILD_DATE so identical rebuilds don't churn on date alone."""
+    return os.environ.get("WALD_BUILD_DATE", date.today().isoformat())
 
 
 def _nb(cells, wald_meta):
@@ -693,7 +699,7 @@ def build_negative_flags(root: str | Path, log=print) -> dict:
             "filter; the evidence does not support the flag",
         ))
 
-    neg_manifest = {"built": date.today().isoformat(), "flags": flags}
+    neg_manifest = {"built": _build_date(), "flags": flags}
     (neg_dir / "MANIFEST.json").write_text(json.dumps(neg_manifest, indent=2))
     log(f"negative: {len(flags)} false flags across "
         f"{len({f['recipe'] for f in flags})} recipes")
@@ -706,7 +712,7 @@ def build_corpus(root: str | Path, seeds=DEV_SEEDS, heldout_seeds=HELDOUT_SEEDS,
              + build_clean(root, heldout_seeds, "heldout", log=log))
     mutants, discarded = build_mutants(root, clean, log=log)
     manifest = {
-        "built": date.today().isoformat(),
+        "built": _build_date(),
         "clean": clean,
         "mutants": mutants,
         "discarded": discarded,

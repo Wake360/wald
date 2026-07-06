@@ -52,7 +52,13 @@ def _coerce_source(value) -> str:
     return str(value)
 
 
+MAX_NOTEBOOK_BYTES = 20 * 1024 * 1024
+MAX_NOTEBOOK_CELLS = 5000
+
+
 def parse_notebook(path: str | Path) -> ParsedNotebook:
+    if Path(path).is_file() and Path(path).stat().st_size > MAX_NOTEBOOK_BYTES:
+        raise ValueError("notebook exceeds 20 MB cap")
     with warnings.catch_warnings():
         # valid older notebooks lack per-cell `id`; nbformat's read-time
         # validate() warns about it, which is not a wald-level problem
@@ -63,6 +69,8 @@ def parse_notebook(path: str | Path) -> ParsedNotebook:
             # e.g. "cells": null reaches rejoin_lines and iterates None;
             # surface as ValueError so the CLI maps it to a clean exit 3
             raise ValueError("not a valid notebook (malformed structure)") from exc
+    if len(nb.cells) > MAX_NOTEBOOK_CELLS:
+        raise ValueError("notebook exceeds 5000-cell cap")
     return from_nbnode(nb, path=Path(path))
 
 

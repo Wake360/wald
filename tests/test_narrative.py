@@ -160,6 +160,33 @@ def test_backend_error_returns_empty_with_dropped_entry():
     assert "backend error" in result.dropped[0]
 
 
+def test_response_missing_both_keys_is_backend_error():
+    # valid JSON with neither claims nor findings must not read as a clean
+    # notebook: it becomes a backend error so the CLI can fail loud.
+    backend = StubBackend({"summary": "nothing to report"})
+    result = narrative.detect_narrative(_happy_nb(), backend)
+    assert result.claims == [] and result.findings == []
+    assert len(result.dropped) == 1
+    assert result.dropped[0].startswith("backend error:")
+    assert "did not match schema" in result.dropped[0]
+    assert "summary" in result.dropped[0]  # keys seen are reported
+
+
+def test_non_dict_response_is_backend_error():
+    backend = StubBackend([{"flaw_id": "x"}])
+    result = narrative.detect_narrative(_happy_nb(), backend)
+    assert len(result.dropped) == 1
+    assert "did not match schema" in result.dropped[0]
+
+
+def test_claims_list_alone_passes_schema_check():
+    # only one of the two keys need be a list; findings absent is still valid
+    backend = StubBackend({"claims": []})
+    result = narrative.detect_narrative(_happy_nb(), backend)
+    assert result.dropped == []
+    assert result.claims == [] and result.findings == []
+
+
 def test_confidence_clamped():
     backend = StubBackend({
         "claims": [],

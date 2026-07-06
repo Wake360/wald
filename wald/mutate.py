@@ -121,6 +121,8 @@ class FitBeforeSplitMutation(Mutation):
 
         split_code = _stmt_code(module, split_stmt)
         call_args = re.search(r"train_test_split\(\s*(\w+)\s*,", split_code)
+        if call_args is None:
+            raise ValueError("canonical split cell not found")
         pre_name = call_args.group(1)
         new_fit = cst.parse_statement(f"{pre_name} = scaler.fit_transform({pre_name})\n")
 
@@ -150,7 +152,7 @@ class MultipleTestingMutation(Mutation):
 
     def applicable(self, nb_node) -> bool:
         m = meta(nb_node)
-        return bool(m.get("num_cols")) and (m.get("binary_col") or m.get("target_col"))
+        return bool(m.get("num_cols")) and bool(m.get("binary_col") or m.get("target_col"))
 
     def apply(self, nb_node, seed: int):
         m = meta(nb_node)
@@ -204,14 +206,14 @@ class _DropImportNames(cst.CSTTransformer):
     def __init__(self, names: set[str]):
         self.names = names
 
-    def leave_ImportFrom(self, original, updated):
-        if isinstance(updated.names, cst.ImportStar):
-            return updated
-        kept = [a for a in updated.names if a.name.value not in self.names]
+    def leave_ImportFrom(self, original_node, updated_node):
+        if isinstance(updated_node.names, cst.ImportStar):
+            return updated_node
+        kept = [a for a in updated_node.names if a.name.value not in self.names]
         if not kept:
             return cst.RemoveFromParent()
         kept[-1] = kept[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
-        return updated.with_changes(names=kept)
+        return updated_node.with_changes(names=kept)
 
 
 class BaserateAccuracyMutation(Mutation):
@@ -317,7 +319,10 @@ class SurvivorshipMutation(Mutation):
             nb = _insert_code_cell(nb_node, m["agg_cell"], filter_line)
         # conclusion index unshifted with the prepended filter; +1 after insert
         concl = m["conclusion_cell"] + (0 if seed % 2 == 0 else 1)
-        return _replace_markdown(nb, concl, self.conclusion(nb_node, seed))
+        text = self.conclusion(nb_node, seed)
+        if text is None:
+            raise ValueError("empty conclusion pool")
+        return _replace_markdown(nb, concl, text)
 
     def verify(self, mutated_node) -> tuple[bool, dict]:
         src = "\n".join(
@@ -384,7 +389,10 @@ class SignificanceMeaninglessMutation(Mutation):
         src = src.replace("n = 2400", "n = 40000")
         src = src.replace('(variant == "B") * 0.5', '(variant == "B") * 0.17')
         nb = _replace_cell(nb_node, idx, src)
-        return _replace_markdown(nb, m["conclusion_cell"], self.conclusion(nb_node, seed))
+        text = self.conclusion(nb_node, seed)
+        if text is None:
+            raise ValueError("empty conclusion pool")
+        return _replace_markdown(nb, m["conclusion_cell"], text)
 
     def verify(self, mutated_node) -> tuple[bool, dict]:
         probe = "print('WALD_VERIFY_SIG', float(p), float(d))"
@@ -455,7 +463,10 @@ class RegressionToMeanMutation(Mutation):
         )
         idx = m["conclusion_cell"]
         nb = _insert_code_cell(nb_node, idx, code)
-        nb.cells.insert(idx + 1, nbformat.v4.new_markdown_cell(self.conclusion(nb_node, seed)))
+        text = self.conclusion(nb_node, seed)
+        if text is None:
+            raise ValueError("empty conclusion pool")
+        nb.cells.insert(idx + 1, nbformat.v4.new_markdown_cell(text))
         return nb
 
     def verify(self, mutated_node) -> tuple[bool, dict]:

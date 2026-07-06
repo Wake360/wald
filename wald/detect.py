@@ -135,6 +135,12 @@ def detect_leakage_temporal_shuffle(nb: ParsedNotebook, flow: NotebookDataflow) 
         base = re.split(r"[.\[]", ev.call.func, maxsplit=1)[0]
         return base not in MODULE_ALIASES
 
+    def lag_label(ev) -> str:
+        assert ev.call is not None
+        m = LAG_FUNC_RE.search(ev.call.func + "(")
+        assert m is not None
+        return f"`.{m.group(1)}` at cell {ev.cell} line {ev.line}"
+
     def classify_splitter(ctor) -> str:
         if ctor.name == "TimeSeriesSplit":
             return "skip"
@@ -190,8 +196,8 @@ def detect_leakage_temporal_shuffle(nb: ParsedNotebook, flow: NotebookDataflow) 
                 or (ev.call.name in DATE_READERS and "parse_dates" in ev.call.kw_args)
             )
         ]
-        a1 = any(ev.call.name in DATETIME_MAKERS for ev in dt_events)
-        a2 = any(ev.call.name in DATE_READERS for ev in dt_events)
+        a1 = any(ev.call is not None and ev.call.name in DATETIME_MAKERS for ev in dt_events)
+        a2 = any(ev.call is not None and ev.call.name in DATE_READERS for ev in dt_events)
         a3 = bool(TEMPORAL_SORT_INDEX_RE.search(chain_text))
         a_any = a1 or a2 or a3
         a_strong = a2 or a3
@@ -225,10 +231,7 @@ def detect_leakage_temporal_shuffle(nb: ParsedNotebook, flow: NotebookDataflow) 
 
         dt_cell = dt_events[0].cell if dt_events else s.cell
         if has_lag:
-            lag_desc = ", ".join(
-                f"`.{LAG_FUNC_RE.search(ev.call.func + '(').group(1)}` at cell {ev.cell} line {ev.line}"
-                for ev in lag_events
-            )
+            lag_desc = ", ".join(lag_label(ev) for ev in lag_events)
             evidence = (
                 f"time-ordered frame (datetime origin in cell {dt_cell}) carries "
                 f"lag/window features ({lag_desc}); `{s.name}` (cell {s.cell}) uses a "
@@ -385,6 +388,8 @@ def detect_leakage_fit_before_split(nb: ParsedNotebook, flow: NotebookDataflow) 
         # -- imputation with statistics of the same frame, before the split --
         elif call.name in {"fillna", "replace"} and call.receiver is not None:
             base = call.receiver_base
+            if base is None:
+                continue
             base_bind = flow.binding(base, pos)
             _, arg_bindings = flow.chain(call.arg_names, pos)
             if base_bind not in arg_bindings:
@@ -444,7 +449,7 @@ def detect_multiple_testing(nb: ParsedNotebook, flow: NotebookDataflow) -> list[
         )
     else:
         return []
-    extra = {"n_tests": n_static}
+    extra: dict[str, int | float] = {"n_tests": n_static}
     if over_threshold:
         extra["fwer"] = round(fwer, 3)
     first = sites[0]

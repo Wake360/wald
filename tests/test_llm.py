@@ -143,14 +143,18 @@ def test_anthropic_truncated_response_raises_backend_error_without_parsing(monke
 
 def test_anthropic_network_error_wrapped_in_backend_error(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    calls = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
 
     def fake_urlopen(req, *a, **kw):
+        calls.append(req)
         raise urllib.error.URLError("connection refused")
 
     monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
     backend = llm.AnthropicBackend()
     with pytest.raises(llm.BackendError):
         backend.complete("sys", "user")
+    assert len(calls) == 2  # transport failure retried once before giving up
 
 
 def test_anthropic_malformed_envelope_wrapped_in_backend_error(monkeypatch):
@@ -226,14 +230,18 @@ def test_openai_truncated_response_raises_backend_error(monkeypatch):
 
 def test_openai_network_error_wrapped_in_backend_error(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    calls = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
 
     def fake_urlopen(req, *a, **kw):
+        calls.append(req)
         raise urllib.error.URLError("connection refused")
 
     monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
     backend = llm.OpenAIBackend()
     with pytest.raises(llm.BackendError):
         backend.complete("sys", "user")
+    assert len(calls) == 2  # transport failure retried once before giving up
 
 
 def test_openai_malformed_envelope_wrapped_in_backend_error(monkeypatch):
@@ -324,6 +332,77 @@ def test_openai_accumulates_usage(monkeypatch):
     backend = llm.OpenAIBackend()
     backend.complete("sys", "user")
     assert backend.usage == {"input_tokens": 7, "output_tokens": 2}
+
+
+def test_transport_error_retries_once_then_succeeds(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    calls = []
+    slept = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: slept.append(s))
+
+    def fake_urlopen(req, *a, **kw):
+        calls.append(req)
+        if len(calls) == 1:
+            raise urllib.error.URLError("connection refused")
+        return FakeResponse({"content": [{"text": '{"ok": 1}'}]})
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    assert llm.AnthropicBackend().complete("sys", "user") == {"ok": 1}
+    assert len(calls) == 2
+    assert slept == [llm.TRANSPORT_RETRY_PAUSE]  # ~5s pause before the single retry
+
+
+def test_timeout_error_retries_once(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    calls = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+
+    def fake_urlopen(req, *a, **kw):
+        calls.append(req)
+        if len(calls) == 1:
+            raise TimeoutError("timed out")
+        return FakeResponse({"choices": [{"message": {"content": '{"ok": 2}'}}]})
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    assert llm.OpenAIBackend().complete("sys", "user") == {"ok": 2}
+    assert len(calls) == 2
+
+
+class FakeCompleted:
+    def __init__(self, returncode, stdout="", stderr=""):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+def test_agent_backend_surfaces_stderr_on_nonzero_exit(monkeypatch):
+    stderr = "fatal: " + "x" * 1000
+
+    def fake_run(cmd, *a, **kw):
+        return FakeCompleted(2, stdout="", stderr=stderr)
+
+    monkeypatch.setattr(llm.subprocess, "run", fake_run)
+    with pytest.raises(llm.BackendError) as excinfo:
+        llm.AgentBackend().complete("sys", "user")
+    msg = str(excinfo.value)
+    assert "exit 2" in msg
+    assert stderr[:500] in msg  # first 500 stderr chars surfaced
+    assert stderr not in msg    # but the full stderr is truncated
+
+
+def test_agent_backend_passes_prompt_via_stdin_not_argv(monkeypatch):
+    captured = {}
+
+    def fake_run(cmd, *a, **kw):
+        captured["cmd"] = cmd
+        captured["input"] = kw.get("input")
+        return FakeCompleted(0, stdout='{"ok": 1}')
+
+    monkeypatch.setattr(llm.subprocess, "run", fake_run)
+    result = llm.AgentBackend().complete("SYSTEM", "USERPROMPT")
+    assert result == {"ok": 1}
+    assert captured["cmd"] == ["claude", "-p"]  # prompt kept out of argv
+    assert "SYSTEM" in captured["input"] and "USERPROMPT" in captured["input"]
 
 
 def test_replay_cache_write_is_atomic(tmp_path):
