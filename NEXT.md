@@ -7,7 +7,9 @@ estimator, CV sinks, imputation pattern. After: 3 confident flags on the
 same set, all confirmed real, 0 known FPs, parse errors 0. 27 reviewed
 clean notebooks folded into `corpus/real/` with licenses; clean corpus is
 now 75 notebooks (27 real, 48 synthetic) at 0.0% FP. 207 tests. Full story: `evals/2026-07-04-dogfood.md`.
-Blogpost #1 drafted (`posts/`). Repo still local-only.
+Blogpost #1 drafted (`posts/`). Repo is public (github.com/Wake360/wald);
+0.1.0 and 0.2.0 released, wald-lint 0.2.0 on PyPI (2026-07-06).
+Roadmap to v1: `plans/v1-completion.md`.
 
 ## 1. Widen the dogfood set (no key, incremental)
 
@@ -55,9 +57,10 @@ Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
   ship with the repo (Apache-2.0/MIT attribution), report stays
   aggregate-only.
 
-## 4. Parked until the repo is public
+## 4. Unblocked by the repo going public
 
-- GitHub Action with PR annotations (M4) — pointless while local-only.
+- GitHub Action with PR annotations (M4) — planned as Static WS-F in
+  `plans/v1-completion.md`.
 - M3 table QA and severity calibration follow M2.
 
 ## Termination rule (from the plan, unchanged)
