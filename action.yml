@@ -1,0 +1,81 @@
+name: wald
+description: Lint changed notebooks for statistical flaws, emit SARIF for PR annotations, and gate on severity.
+branding:
+  icon: check-circle
+  color: purple
+
+inputs:
+  paths:
+    description: Space-separated notebook paths or directories to check.
+    default: "."
+  version:
+    description: wald-lint version to install from PyPI.
+    default: "0.2.1"
+  fail-on:
+    description: Severity that fails the gate — high, medium, or never.
+    default: "medium"
+
+outputs:
+  sarif-file:
+    description: Path to the SARIF 2.1.0 log written by the run step.
+    value: ${{ steps.run.outputs.sarif-file }}
+  exit-code:
+    description: Raw wald exit code (0 clean, 1 medium, 2 high, 3 usage/input error).
+    value: ${{ steps.run.outputs.exit-code }}
+  gate-exit-code:
+    description: Exit code the consumer should gate on after applying fail-on.
+    value: ${{ steps.run.outputs.gate-exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: python3 -m pip install --quiet "wald-lint==${{ inputs.version }}"
+
+    - id: run
+      shell: bash
+      run: |
+        set +e
+
+        paths="${{ inputs.paths }}"
+        fail_on="${{ inputs.fail-on }}"
+
+        if [ -z "${paths// /}" ]; then
+          echo "wald: 'paths' input is empty or whitespace" >&2
+          sarif="$RUNNER_TEMP/wald.sarif"
+          printf '%s\n' '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"wald","informationUri":"https://github.com/Wake360/wald","rules":[]}},"results":[]}]}' > "$sarif"
+          {
+            echo "sarif-file=$sarif"
+            echo "exit-code=3"
+            echo "gate-exit-code=3"
+          } >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        sarif="$RUNNER_TEMP/wald.sarif"
+        # word-split paths intentionally: a space-separated list becomes multiple args
+        wald check $paths --format sarif > "$sarif"
+        code=$?
+
+        # A crash or empty stdout leaves a blank file; upload-sarif rejects that,
+        # so drop in a minimal valid SARIF the uploader will accept.
+        if [ ! -s "$sarif" ]; then
+          printf '%s\n' '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"wald","informationUri":"https://github.com/Wake360/wald","rules":[]}},"results":[]}]}' > "$sarif"
+        fi
+
+        case "$fail_on" in
+          never) if [ "$code" -eq 3 ]; then gate=3; else gate=0; fi ;;
+          medium) gate=$code ;;
+          high) if [ "$code" -eq 1 ]; then gate=0; else gate=$code; fi ;;
+          *) echo "wald: invalid fail-on '$fail_on' (want high|medium|never)" >&2; gate=3 ;;
+        esac
+
+        {
+          echo "sarif-file=$sarif"
+          echo "exit-code=$code"
+          echo "gate-exit-code=$gate"
+        } >> "$GITHUB_OUTPUT"
+
+        # Never fail the job here: the consumer uploads SARIF (if: always())
+        # before running the gate, so annotations appear even on red runs.
+        exit 0
