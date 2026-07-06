@@ -338,6 +338,16 @@ def test_message_llm_missing_keys(monkeypatch, capsys):
     )
 
 
+def test_eval_llm_missing_keys_exits_3(monkeypatch, capsys):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    rc = main(["eval", "--llm", "--split", "dev"])
+    assert rc == 3
+    assert capsys.readouterr().err == (
+        "wald: --llm needs ANTHROPIC_API_KEY and OPENAI_API_KEY set in the environment\n"
+    )
+
+
 def test_heldout_refusal_has_prefix_and_exits_3(tmp_path, capsys):
     (tmp_path / "clean").mkdir()
     (tmp_path / "clean" / "foo.ipynb").write_text(
