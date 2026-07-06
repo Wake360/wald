@@ -52,6 +52,11 @@
     Split by time: an explicit cutoff date, train_test_split(shuffle=False)
     on time-sorted rows, or TimeSeriesSplit for cross-validation.
 
+# Static promotion parked (2026-07-06): the flaw is the PAIR (filter,
+# population-scoped claim). The static half sees only the filter — a
+# scoped-claim notebook emits the identical 0.55 candidate, so raising it
+# above the floor would flag legitimate analysis. Deciding needs the
+# narrative layer's claim signal (fusion). plans/v1-completion.md WS-C.
 - id: selection-survivorship-cohort
   class: selection
   layer: static+narrative

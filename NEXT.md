@@ -48,6 +48,10 @@ Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
   ships FP-gated but recall-unclaimed; confidences are fixed constants,
   never the model's number; held-out contamination is structurally
   prevented (eval raises), not just labeled.
+- selection-survivorship-cohort static promotion is parked (2026-07-06):
+  a scoped-claim notebook emits the identical 0.55 candidate, so
+  static-alone cannot hold precision above the floor. The narrative
+  layer's claim signal decides; candidate + 16 mutants stay as-is.
 
 ## 3. Publish
 
