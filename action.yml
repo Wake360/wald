@@ -29,16 +29,24 @@ outputs:
 runs:
   using: composite
   steps:
+    # Inputs reach the shell via env, never ${{ }} inside run: a template
+    # expansion there executes attacker-controlled input (e.g. PR filenames
+    # passed as paths) as code.
     - shell: bash
-      run: python3 -m pip install --quiet "wald-lint==${{ inputs.version }}"
+      env:
+        WALD_VERSION: ${{ inputs.version }}
+      run: python3 -m pip install --quiet "wald-lint==$WALD_VERSION"
 
     - id: run
       shell: bash
+      env:
+        WALD_PATHS: ${{ inputs.paths }}
+        WALD_FAIL_ON: ${{ inputs.fail-on }}
       run: |
         set +e
 
-        paths="${{ inputs.paths }}"
-        fail_on="${{ inputs.fail-on }}"
+        paths="$WALD_PATHS"
+        fail_on="$WALD_FAIL_ON"
 
         if [ -z "${paths// /}" ]; then
           echo "wald: 'paths' input is empty or whitespace" >&2
