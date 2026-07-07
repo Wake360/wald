@@ -1,0 +1,30 @@
+name: wald-demo
+on: [pull_request]
+
+# Throwaway self-test of the composite action against a known-leaky
+# notebook. Proves the SARIF upload surfaces a PR annotation and the
+# gate fails on a HIGH finding. Not for main.
+jobs:
+  check-notebooks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: wald
+        id: wald
+        uses: Wake360/wald@v0.2.1
+        with:
+          paths: demo-leaky.ipynb
+          fail-on: high
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.wald.outputs.sarif-file }}
+      - name: Gate on wald exit code
+        run: exit ${{ steps.wald.outputs.gate-exit-code }}
