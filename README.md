@@ -77,10 +77,23 @@ all three confirmed real leaks, 0 known false positives. The report keeps
 the full failure taxonomy; the 27 clean notebooks entered the corpus with
 licenses recorded per file.
 
-**Honest caveat:** real-flaw recall is measured against only 7 confirmed
-instances so far — enough to fix the detector, too few to report as a
-recall number. Sources are teaching-oriented repositories; production
-notebooks are messier.
+**Wider dogfood — first recall and precision numbers**
+(`evals/2026-07-07-dogfood-wide.md`): 60 fresh GitHub notebooks, none
+from the teaching repos above. wald flagged 13; adversarial review
+confirmed 25 of 28 flags real (**0.89 flag precision**, 12 of 13 flagged
+notebooks genuinely leaky) and, over a seeded 30-notebook miss-hunt
+sample of the un-flagged set, found 8 leaks wald missed — **0.60
+notebook-level recall** across the 43-notebook audited subset. 33
+confirmed leak instances across 20 notebooks, all in the two leakage
+classes (28 `leakage-fit-before-split`, 5 `leakage-temporal-shuffle`).
+
+**Honest caveats:** the recall evidence is leakage-only — this sample
+produced zero confirmed real instances of the testing or base-rate
+classes, so no real-world recall is claimed for them. The one false
+positive (an RFECV scout-subsample pattern) shows the corpus's 0.0% FP
+does not carry to messy real code; 0.60 recall is a one-seed subset
+estimate, upper-leaning. Ground truth is multi-agent adversarial review,
+not expert human labeling.
 
 ## What Wald sees (v1) and what it doesn't
 
