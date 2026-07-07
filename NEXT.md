@@ -1,75 +1,78 @@
 # Next steps
 
-State (2026-07-04): M0+M1 done, dogfood done. First contact with 34 real
-notebooks produced the predicted FP flood (119/124 flags false); detector
-rebuilt from the review data — flow-sensitive dataflow, transformer vs.
-estimator, CV sinks, imputation pattern. After: 3 confident flags on the
-same set, all confirmed real, 0 known FPs, parse errors 0. 27 reviewed
-clean notebooks folded into `corpus/real/` with licenses; clean corpus is
-now 75 notebooks (27 real, 48 synthetic) at 0.0% FP. 207 tests. Full story: `evals/2026-07-04-dogfood.md`.
-Blogpost #1 drafted (`posts/`). Repo is public (github.com/Wake360/wald);
-0.1.0 and 0.2.0 released, wald-lint 0.2.0 on PyPI (2026-07-06).
-Roadmap to v1: `plans/v1-completion.md`.
+State (2026-07-07): Milestones 0, 1, and 2 are done. `wald-lint 0.2.1`
+is on PyPI (install-proven in a clean venv) and the repo is public
+(github.com/Wake360/wald). The static layer is four classes at
+precision/recall 1.00 on 192 mutants, 0.0% FP on 83 clean notebooks. The
+GitHub Action (`action.yml`) ships and was demonstrated end-to-end (a real
+PR annotation surfaced, then dismissed). First real-world numbers are on
+main: **0.60 notebook-level recall, 0.89 flag precision** over 60 fresh
+GitHub notebooks (`evals/2026-07-07-dogfood-wide.md`), leakage classes
+only. Roadmap: `plans/v1-completion.md`.
 
-## 1. Widen the dogfood set (no key, incremental)
+The only remaining v1 work is the LLM narrative layer's gate runs. Below
+that are optional static extensions and known papercuts — none block v1.
 
-Teaching repos are the easy case. Next: messier sources — Kaggle kernels
-proper (needs `kaggle` CLI + credentials, licenses recorded per kernel),
-or GitHub search for analysis notebooks in org repos. Target: first real
-recall number (needs ≥ 30 confirmed real flaws, we have 7).
+## 1. Milestone 3 — LLM narrative gates (blocked on two API keys)
 
-- Known miss classes to keep on the list: groupby-`apply` imputation,
-  function-scoped target-correlation selection. Both need M2/M3, not more
-  static heuristics — resist the urge.
+The narrative (`--llm`) layer is built and tested key-free against replay
+fixtures; it has never run its G2/G3 quality gates. Running them is the
+last v1 milestone.
 
-## 2. M2 — LLM narrative layer (built key-free; gate runs blocked on keys)
+- Needs `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` in the environment
+  (cross-provider is a hard constraint, enforced in `fuse.py`). Projected
+  spend ~$19–21 of the $150 budget; the binding limit is the 2-iteration /
+  2-attempt count, not dollars.
+- Sequence and exact gate thresholds: `plans/v1-completion.md` §3A and
+  `plans/g2g3-runbook.md`. In short: ~$1 fixture smoke → ≤2 dev checkpoints
+  (dev bar: recall ≥ 0.6, FP ≤ 10%, dropped ≤ 10% per class) → decide the
+  `[output]`-quote grounding seam → ≤2 held-out attempts (gate: all three
+  F1 ≥ 0.7, clean FP ≤ 0.10, pooled G3 kill ≥ 0.80, survival ≥ 0.75,
+  `gate_evidence == true`, `backend_errors == []`) → LLM dogfood over
+  `corpus/real/*`.
+- Only the three mutant-backed narrative classes enter the prompt.
+  Confidences are fixed constants, never the model's number. Held-out
+  contamination is structurally prevented (the eval raises), not just
+  labeled.
+- Publish rule: no narrative recall/F1 reaches README until a held-out
+  report shows `gate_evidence == true`. Numbers then ride a follow-up tag
+  through the existing release pipeline.
 
-Detailed plan: `plans/m2.md` (2026-07-04, synthesized from a
-3-designer + 2-critic workflow). Status:
+## 2. Optional static extensions (not blocking v1)
 
-- Built and tested key-free: narrative mutations, held-out split,
-  negative corpus (one recipe mined from the 119 dogfood FPs), backend
-  seam, detector, verifier, fusion, eval extension — all against replay
-  fixtures. Static-only stays the default and needs no key.
-- Phase 2 done (2026-07-05): prompt shaken down on the dev split via a
-  session-agent backend (`claude -p`, $0, never gate evidence). Two
-  iterations, both forensics-driven: the significance disqualifier now
-  requires acknowledgment in the written conclusion, and the verifier
-  prompt includes the cited cell's executed output. Final dev numbers
-  (sonnet detector / haiku stand-in verifier): recall 0.75/1.00/1.00
-  across the three classes, clean FP 0%, drops 6.7%, G3 kill 20/20,
-  true-flag survival 22/22. Known seam for M3: a code quote that
-  crosses into `[output]` text can never ground (cost: 2/8 dev recall
-  on significance, sampling-dependent).
-- Remaining: the G2/G3 gate runs need TWO keys (Anthropic detector +
-  OpenAI verifier; cross-provider is a hard constraint). Projected spend
-  ~$30–45 of the $150 budget.
-- Only the three mutant-backed classes enter the prompt; pre-CV fusion
-  ships FP-gated but recall-unclaimed; confidences are fixed constants,
-  never the model's number; held-out contamination is structurally
-  prevented (eval raises), not just labeled.
-- selection-survivorship-cohort static promotion is parked (2026-07-06):
-  a scoped-claim notebook emits the identical 0.55 candidate, so
-  static-alone cannot hold precision above the floor. The narrative
-  layer's claim signal decides; candidate + 16 mutants stay as-is.
+- **Dogfood batch 2.** Batch 1 already met the ≥30-confirmed target (33
+  instances), so a second batch is optional. Its value is coverage, not
+  count: batch 1 produced zero confirmed real instances of
+  `testing-multiple-uncorrected` and `baserate-accuracy-imbalanced`, so the
+  0.60 recall is leakage-only. A targeted batch aimed at those two classes
+  would turn "unmeasured" into a real number. Sourcing mechanics and the
+  confirmation-workflow spec are in `plans/v1-completion.md` (WS-A).
+- **selection-survivorship-cohort** stays parked for narrative fusion
+  (a scoped-claim notebook emits the identical below-floor candidate;
+  static-alone cannot hold precision). Decided by the narrative layer's
+  claim signal in M3.
+- **Known miss classes** to leave to M2/M3, not more static heuristics:
+  groupby-`apply` imputation, function-scoped target-correlation selection.
 
-## 3. Publish
+## 3. Known papercuts
 
-- Blogpost #1 draft is in `posts/` — final numbers are in, publish when
-  the repo goes public.
-- Pre-publication checklist: LICENSE files in `corpus/real/LICENSES/`
-  ship with the repo (Apache-2.0/MIT attribution), report stays
-  aggregate-only.
-
-## 4. Unblocked by the repo going public
-
-- GitHub Action with PR annotations (M4) — planned as Static WS-F in
-  `plans/v1-completion.md`.
-- M3 table QA and severity calibration follow M2.
+- **RFECV scout-subsample false positive** — the one FP from the wide
+  dogfood. Documented with disposition in `docs/fit-before-split-fps.md`
+  (accept for 0.2.x; a precise fix needs reach analysis). Revisit if a
+  wider dogfood shows the idiom recurring.
+- **`wald corpus build` hangs locally** on macOS — it executes mutant
+  notebooks through Jupyter kernels, and one deadlocks under concurrent
+  builds. Per-cell (180s) and startup (60s) timeouts already exist, so the
+  phase at fault is not yet isolated. Operational fix for now: run one
+  build at a time. CI is unaffected (fresh runners, green every release);
+  do not patch the executor until a standalone single-build hang is
+  reproduced.
 
 ## Termination rule (from the plan, unchanged)
 
-If after M2 the narrative layer cannot hold recall ≥ 0.6 with FP ≤ 10%
-after two prompt/fusion iterations, v1 narrows to the static linter and
-ships with the honest eval report. The static layer alone is a usable
-tool; the corpus is a durable artifact either way.
+If after M3 the narrative layer cannot hold recall ≥ 0.6 at FP ≤ 10% after
+two prompt/fusion iterations, v1 narrows to the static linter and ships
+with the honest eval report. The static layer alone is a usable tool and
+the corpus is a durable artifact either way. If the two keys never arrive,
+that static-only outcome is the default v1 and Milestones 0–2 are the
+shipped product.
