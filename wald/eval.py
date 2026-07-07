@@ -153,9 +153,10 @@ def render_report(results: dict) -> str:
         "",
         "## Honest caveats",
         "- Mutants are injected only into the synthetic notebooks, so recall "
-        "is measured on canonical idioms. Real notebooks contribute to the "
-        "clean FP rate only; real-flaw recall rests on the 7 confirmed "
-        "instances in the dogfood report (too few for a recall number).",
+        "here is measured on canonical idioms. Real-world recall is measured "
+        "separately on fresh notebooks: 0.60 notebook-level over a 43-notebook "
+        "audited subset at 0.89 flag precision, leakage classes only "
+        "(evals/2026-07-07-dogfood-wide.md).",
         "- Survivorship is reported as candidate recall only — the static "
         "half cannot decide it (the flaw is the pair filter+claim).",
     ]
