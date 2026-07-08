@@ -222,7 +222,7 @@ def test_system_prompt_snapshot():
         "regression-to-mean-claim",
     ):
         assert prompt.count(flaw_id) == 1
-    assert "explicitly scoped to the filtered group" in prompt
+    assert "explicitly scoped to the filtered/surviving group" in prompt
     assert "linearity-extrapolation" not in prompt
     assert "leakage-future-feature" not in prompt
 

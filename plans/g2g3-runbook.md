@@ -54,6 +54,26 @@ Sources: `plans/m2.md` (gates, cost ledger, iteration budget, R3),
   rename immediately to an attempt-tagged name before running the next
   attempt (command inline in step 4).
 
+## 0.5 Frozen prompt (book-extraction refinement, 2026-07-08)
+
+The three narrative flaw definitions in `wald/taxonomy/flaws.yaml`
+(`selection-survivorship-cohort`, `significance-meaningless`,
+`regression-to-mean-claim`) were sharpened from the LifeOS book-extraction
+concepts (Ellenberg, ISLP) and **frozen** before any subscription-run
+capability existed. The gate below measures against this frozen prompt.
+
+- **No prompt tuning against corpus notebooks.** Do not edit `flaws.yaml`
+  in response to a false positive observed on any `corpus/*` (especially
+  `corpus/real/*`, which the held-out eval folds into the clean-FP set).
+  That would tune the shared detector prompt against gate material and
+  contaminate the held-out number through the prompt, not the model. This
+  upholds STOP 2 (R3).
+- **Replay fixtures are prompt-keyed.** `ReplayBackend` keys cache entries by
+  `sha256(system + user)`; the system prompt is generated from `flaws.yaml`,
+  so this refinement invalidated every recorded fixture. Re-record the smoke
+  fixtures (step 1) fresh when the real gate runs; do not reuse pre-refinement
+  fixtures.
+
 ## 1. Command sequence
 
 Run in this order. Do not skip ahead if an earlier step fails or looks
