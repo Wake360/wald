@@ -21,8 +21,11 @@ from .report import _colorize, exit_code, parse_warning, report_obj, to_markdown
 _KEY_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 
 
-def _llm_backends(replay_dir):
-    from .llm import AnthropicBackend, OpenAIBackend, ReplayBackend
+def _llm_backends(replay_dir, subscription=False):
+    from .llm import AgentBackend, AnthropicBackend, CodexBackend, OpenAIBackend, ReplayBackend
+
+    if subscription:
+        return AgentBackend(), CodexBackend()
 
     det, ver = AnthropicBackend(), OpenAIBackend()
     if replay_dir:
@@ -110,7 +113,7 @@ def cmd_check(args) -> int:
         return 3
     det = ver = None
     if args.llm:
-        det, ver = _llm_backends(args.replay_dir)
+        det, ver = _llm_backends(args.replay_dir, subscription=args.llm_subscription)
         missing = _missing_llm_keys(det, ver)
         if missing:
             print(f"wald: --llm needs {' and '.join(missing)} set in the environment",
@@ -197,7 +200,13 @@ def cmd_eval(args) -> int:
     if args.llm:
         from .eval import run_llm_eval
 
-        det, ver = _llm_backends(args.replay_dir)
+        if args.llm_subscription and args.split == "heldout":
+            print("wald: subscription runs cannot produce gate evidence — set "
+                  "ANTHROPIC_API_KEY + OPENAI_API_KEY for the held-out gate",
+                  file=sys.stderr)
+            return 3
+
+        det, ver = _llm_backends(args.replay_dir, subscription=args.llm_subscription)
         missing = _missing_llm_keys(det, ver)
         if missing:
             print(f"wald: --llm needs {' and '.join(missing)} set in the environment",
@@ -262,6 +271,9 @@ def main(argv=None) -> int:
                               "confident findings below the gate exit 1")
     p_check.add_argument("--llm", action="store_true",
                          help="add the narrative layer (needs API keys)")
+    p_check.add_argument("--llm-subscription", action="store_true",
+                         help="run the narrative layer through the claude/codex CLIs "
+                              "(subscription billing, no API keys); never gate-eligible")
     p_check.add_argument("--replay-dir", help="record/replay LLM responses here")
     p_check.set_defaults(func=cmd_check)
 
@@ -272,6 +284,9 @@ def main(argv=None) -> int:
                         help="directory for dated eval reports (default: %(default)s)")
     p_eval.add_argument("--llm", action="store_true",
                         help="narrative-layer eval (needs API keys)")
+    p_eval.add_argument("--llm-subscription", action="store_true",
+                        help="run the narrative layer through the claude/codex CLIs "
+                             "(subscription billing, no API keys); never gate-eligible")
     p_eval.add_argument("--split", choices=["dev", "heldout"], default="dev")
     p_eval.add_argument("--replay-dir", help="record/replay LLM responses here")
     p_eval.set_defaults(func=cmd_eval)

@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -191,7 +192,11 @@ class OpenAIBackend:
 
 @dataclass
 class AgentBackend:
-    provider: str = field(default="agent", init=False)
+    """Subscription detector: shells out to the `claude` CLI (OAuth billing,
+    no API key). Never gate-eligible — a subscription session's output is not
+    reproducible in the way a pinned API call is."""
+
+    provider: str = field(default="anthropic-agent", init=False)
     model: str = field(default="session", init=False)
     kind: str = field(default="agent", init=False)
 
@@ -202,9 +207,12 @@ class AgentBackend:
     def _request(self, system: str, user: str) -> str:
         try:
             result = subprocess.run(
-                ["claude", "-p"],
-                input=system + user,
+                ["claude", "-p", "--output-format", "json", "--model", "sonnet",
+                 "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
+                 "--system-prompt", system, "--disallowed-tools", "*"],
+                input=user,
                 capture_output=True, text=True, timeout=600,
+                cwd=tempfile.gettempdir(),
             )
         except subprocess.TimeoutExpired as exc:
             raise BackendError(f"agent session timed out: {exc}") from exc
@@ -212,7 +220,55 @@ class AgentBackend:
             raise BackendError(
                 f"agent session failed (exit {result.returncode}): {result.stderr[:500]}"
             )
-        return result.stdout
+        try:
+            envelope = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise BackendError(f"agent session envelope not valid JSON: {exc}") from exc
+        if envelope.get("is_error") or envelope.get("subtype") != "success":
+            raise BackendError(
+                f"agent session turn failed: subtype={envelope.get('subtype')!r} "
+                f"is_error={envelope.get('is_error')!r}"
+            )
+        return envelope.get("result", "")
+
+    def complete(self, system: str, user: str, schema: dict | None = None) -> dict:
+        return _call_with_retry(self._request, system, _with_schema(user, schema))
+
+
+@dataclass
+class CodexBackend:
+    """Subscription verifier: shells out to the `codex` CLI (OAuth billing,
+    no API key). Never gate-eligible, same reason as AgentBackend."""
+
+    provider: str = field(default="codex", init=False)
+    model: str = field(default="session", init=False)
+    kind: str = field(default="agent", init=False)
+
+    @property
+    def gate_eligible(self) -> bool:
+        return False
+
+    def _request(self, system: str, user: str) -> str:
+        out_fd, out_path = tempfile.mkstemp(suffix=".txt")
+        os.close(out_fd)
+        try:
+            try:
+                result = subprocess.run(
+                    ["codex", "exec", "-o", out_path, "-s", "read-only",
+                     "--skip-git-repo-check", "--ignore-rules", "-"],
+                    input=f"{system}\n\n{user}",
+                    capture_output=True, text=True, timeout=600,
+                    cwd=tempfile.gettempdir(),
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise BackendError(f"agent session timed out: {exc}") from exc
+            if result.returncode != 0:
+                raise BackendError(
+                    f"agent session failed (exit {result.returncode}): {result.stderr[:500]}"
+                )
+            return Path(out_path).read_text()
+        finally:
+            Path(out_path).unlink(missing_ok=True)
 
     def complete(self, system: str, user: str, schema: dict | None = None) -> dict:
         return _call_with_retry(self._request, system, _with_schema(user, schema))

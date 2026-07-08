@@ -13,7 +13,13 @@ from wald.cli import _heldout_refusal
 from wald.detect import run_static
 from wald.eval import evaluate_narrative
 from wald.ingest import parse_notebook
-from wald.llm import PINNED_DETECTOR_MODEL, PINNED_VERIFIER_MODEL, ReplayBackend
+from wald.llm import (
+    PINNED_DETECTOR_MODEL,
+    PINNED_VERIFIER_MODEL,
+    AgentBackend,
+    CodexBackend,
+    ReplayBackend,
+)
 from wald.mutate import SurvivorshipMutation
 
 CORPUS = Path(__file__).parent.parent / "corpus"
@@ -294,6 +300,29 @@ def test_heldout_raises_for_prepopulated_replay_cache(mini, tmp_path):
     assert det.gate_eligible and ver.gate_eligible  # true today, the trap
     with pytest.raises(RuntimeError, match="heldout"):
         evaluate_narrative(mini["root"], det, ver, split="heldout")
+
+
+def test_subscription_backends_never_yield_gate_evidence_on_dev(mini, monkeypatch):
+    # AgentBackend/CodexBackend are kind="agent", gate_eligible=False by
+    # construction — that invariant must survive a full dev-split run, not
+    # just a static check. Stub the subprocess-facing _request so no `claude`
+    # or `codex` binary is invoked.
+    det = AgentBackend()
+    ver = CodexBackend()
+    monkeypatch.setattr(det, "_request", lambda system, user: '{"claims": [], "findings": []}')
+    monkeypatch.setattr(
+        ver, "_request", lambda system, user: '{"verdict": "unsupported", "reason": "stub"}'
+    )
+    res = evaluate_narrative(mini["root"], det, ver, split="dev")
+    assert res["gate_evidence"] is False
+    assert res["detector"]["kind"] == "agent"
+    assert res["verifier"]["kind"] == "agent"
+
+
+def test_subscription_backends_refused_on_heldout(mini):
+    # kind="agent" trips the structural guard before any subprocess runs.
+    with pytest.raises(RuntimeError, match="heldout"):
+        evaluate_narrative(mini["root"], AgentBackend(), CodexBackend(), split="heldout")
 
 
 def test_gate_evidence_false_when_model_not_pinned(mini):
