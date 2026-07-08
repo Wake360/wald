@@ -62,21 +62,35 @@
   layer: static+narrative
   severity: high
   definition: >
-    The cohort is filtered by a condition correlated with the outcome
-    (active/retained/completers only) while the conclusion is stated about
-    the whole population.
+    A metric or conclusion is computed over a cohort narrowed by an
+    outcome-correlated survival or selection step (active users, retained
+    accounts, or completers only; or a track record built by repeatedly
+    discarding losers and keeping only the winners — the Baltimore-broker
+    pattern), while the excluded or eliminated units are absent from the
+    data and the conclusion is stated as if it held for the whole original
+    population.
   book_anchor: "Survivorship-bias-Wald-Ellenberg; Baltimore broker"
   failure_scenario: >
-    Decisions justified by a metric that would look identical even if the
-    product destroyed value for the excluded group.
+    Decisions rest on a metric that would look identical even if the
+    product destroyed value for the excluded group, or a claimed track
+    record that is really the last survivors of many parallel attempts
+    whose failures went unreported.
   fix: >
     Compute the metric on the full cohort (including churned units'
     realized values), or scope the claim explicitly to the filtered group.
   narrative_enabled: true
   disqualifiers:
-    - The claim is explicitly scoped to the filtered group (e.g. "among
-      active users...") rather than to the whole population.
+    - The claim is explicitly scoped to the filtered/surviving group (e.g.
+      "among active users..." or "of the strategies still running...")
+      rather than to the whole original population.
     - The filter column is unrelated to the outcome being measured.
+    - The excluded or eliminated units' effect on the outcome is estimated,
+      bounded, or otherwise accounted for elsewhere in the analysis (not
+      merely their count) — e.g. a churn-adjusted metric or a stated
+      worst-case assumption for the missing group.
+    - The selection criterion or prediction was fixed and disclosed before
+      the outcome was known, rather than chosen after seeing which units
+      or attempts happened to succeed.
 
 - id: testing-multiple-uncorrected
   class: testing
@@ -99,12 +113,13 @@
   layer: narrative
   severity: medium
   definition: >
-    A conclusion rests on p<0.05 with negligible effect size, or on
-    "significance" from an underpowered study.
+    A conclusion rests on p<0.05 with a negligible effect size, or claims
+    a finding is real on the strength of significance alone from a study
+    too small to detect the claimed effect reliably.
   book_anchor: "Statistically-significant-but-meaningless-Ellenberg"
   failure_scenario: >
     Resources committed to an effect too small to matter, or a noise blip
-    treated as a finding.
+    from an underpowered study mistaken for a real finding.
   fix: >
     Report and interpret effect size with confidence intervals alongside
     the p-value.
@@ -118,30 +133,46 @@
       Only a conclusion entirely silent on effect size fails it, and a
       silent conclusion gets no credit for a value that appears only
       in code or output.
-    - The effect size is non-negligible.
+    - The effect size is non-negligible, and the sample was large enough
+      to estimate it reliably. A large point estimate from a study too
+      small to detect the claimed effect (severely underpowered) does not
+      satisfy this disqualifier — an inflated point estimate from a tiny
+      sample is exactly the kind of noise that produces "significant"
+      findings that don't replicate.
 
 - id: regression-to-mean-claim
   class: narrative
   layer: narrative
   severity: high
   definition: >
-    An extreme subgroup selected at time T, and its change toward T+1 read
-    as an effect of an intervention, without a control group.
+    An extreme subgroup selected at time T (tail performers, biggest
+    gainers/losers) whose reversion toward the mean by T+1 is read as an
+    effect of an intervention applied in between, without a control group
+    of equally extreme, untreated units.
   book_anchor: "Regression-to-mean-Ellenberg"
   failure_scenario: >
-    The intervention gets credit (or blame) for what is partly luck
-    reverting; the effect will not replicate.
+    The intervention gets credit (or blame) for what is largely the
+    random/luck component reverting toward its mean; the real/skill
+    component persists regardless of treatment, so the claimed effect will
+    not replicate on a fresh extreme-selected sample.
   fix: >
     Compare against a control group of equally extreme units without the
     intervention. Shrinkage estimates correct the estimated level but do
     not establish an effect.
   narrative_enabled: true
   disqualifiers:
-    - A control group of equally extreme units is present alongside the
-      treated group.
-    - The language is explicitly non-causal (describes reversion, not an
-      intervention effect).
-    - No extreme-subset selection preceded the comparison.
+    - A control group of equally extreme, untreated units is present
+      alongside the treated group, isolating the intervention's effect
+      from reversion.
+    - The language is explicitly non-causal — it describes reversion or
+      convergence toward the mean, not an intervention's effect.
+    - The compared subgroup was not selected for being in the tail (e.g.,
+      a random sample or the full population) before the comparison.
+    - The extreme group is drawn from a heavy-tailed/power-law population
+      where persistence at the top or bottom is the structural norm rather
+      than a real-plus-random draw around a stable mean (e.g., firm size,
+      viral reach, market share in winner-take-all markets) — classical
+      regression to the mean does not apply.
 
 - id: linearity-extrapolation
   class: narrative

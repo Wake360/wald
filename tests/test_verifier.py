@@ -83,8 +83,8 @@ def test_prompt_contains_definition_disqualifier_and_full_cell_text():
     backend = StubBackend({"verdict": "unsupported", "reason": "x"})
     verify_finding(finding(), nb(), backend)
     prompt = backend.last_user
-    assert "cohort is filtered by a condition correlated with the outcome" in prompt
-    assert "explicitly scoped to the filtered group" in prompt
+    assert "outcome-correlated survival or selection step" in prompt
+    assert "explicitly scoped to the filtered/surviving group" in prompt
     assert "LTV grows across the population." in prompt
     assert "df = df[df.status == 'active']" in prompt
     # full cell text, not just the quote: the scoping sentence one line away
