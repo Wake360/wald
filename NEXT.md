@@ -13,11 +13,18 @@ only. Roadmap: `plans/v1-completion.md`.
 The only remaining v1 work is the LLM narrative layer's gate runs. Below
 that are optional static extensions and known papercuts — none block v1.
 
-## 1. Milestone 3 — LLM narrative gates (blocked on two API keys)
+## 1. Milestone 3 — LLM narrative layer (run-path DONE; G2/G3 gates blocked on two API keys)
 
 The narrative (`--llm`) layer is built and tested key-free against replay
-fixtures; it has never run its G2/G3 quality gates. Running them is the
-last v1 milestone.
+fixtures. **Run-path: done.** It now runs end-to-end on subscriptions via
+`--llm-subscription` (claude/codex CLIs, $0 API) — proven on a survivorship
+mutant and dogfooded over `corpus/real/*`
+(`evals/2026-07-08-llm-dogfood-subscription.md`: 27 notebooks, 0 backend
+errors, 1 true-positive leakage catch, non-gate). The three narrative
+definitions were also sharpened from the book-extraction sources and frozen.
+**Still open:** it has never run its G2/G3 quality gates — that needs the two
+API keys and is the last v1 milestone. Subscription runs are `gate_eligible=
+False` by construction and cannot substitute (see the bullet below).
 
 - Needs `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` in the environment
   (cross-provider is a hard constraint, enforced in `fuse.py`). Projected
