@@ -37,6 +37,12 @@ last v1 milestone.
 - Publish rule: no narrative recall/F1 reaches README until a held-out
   report shows `gate_evidence == true`. Numbers then ride a follow-up tag
   through the existing release pipeline.
+- Key-free running (not gating) is now available: `--llm-subscription`
+  routes the detector/verifier through the `claude`/`codex` CLIs
+  (subscription billing, no API keys). These backends are `kind="agent"`,
+  `gate_eligible=False` — usable for dev and dogfood only. The held-out
+  eval refuses them (`eval.py` raises on non-api at `heldout`), so this
+  does not touch the gate above: G2/G3 still need the two keys.
 
 ## 2. Optional static extensions (not blocking v1)
 
