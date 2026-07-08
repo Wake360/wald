@@ -2,6 +2,7 @@ import email.message
 import hashlib
 import json
 import urllib.error
+from pathlib import Path
 
 import pytest
 
@@ -392,17 +393,71 @@ def test_agent_backend_surfaces_stderr_on_nonzero_exit(monkeypatch):
 
 def test_agent_backend_passes_prompt_via_stdin_not_argv(monkeypatch):
     captured = {}
+    envelope = json.dumps({
+        "type": "result", "subtype": "success", "is_error": False, "result": '{"ok": 1}',
+    })
 
     def fake_run(cmd, *a, **kw):
         captured["cmd"] = cmd
         captured["input"] = kw.get("input")
-        return FakeCompleted(0, stdout='{"ok": 1}')
+        return FakeCompleted(0, stdout=envelope)
 
     monkeypatch.setattr(llm.subprocess, "run", fake_run)
     result = llm.AgentBackend().complete("SYSTEM", "USERPROMPT")
     assert result == {"ok": 1}
-    assert captured["cmd"] == ["claude", "-p"]  # prompt kept out of argv
+    assert captured["cmd"][:3] == ["claude", "-p", "--output-format"]
+    assert "--system-prompt" in captured["cmd"]
+    assert "--strict-mcp-config" in captured["cmd"]
+    # prompt kept out of argv: SYSTEM only appears as the --system-prompt value
+    assert captured["cmd"][captured["cmd"].index("--system-prompt") + 1] == "SYSTEM"
+    assert "USERPROMPT" not in captured["cmd"]
+    assert captured["input"] == "USERPROMPT"
+
+
+def test_agent_backend_raises_on_error_envelope(monkeypatch):
+    envelope = json.dumps({"type": "result", "subtype": "error_max_turns", "is_error": True})
+
+    def fake_run(cmd, *a, **kw):
+        return FakeCompleted(0, stdout=envelope)
+
+    monkeypatch.setattr(llm.subprocess, "run", fake_run)
+    with pytest.raises(llm.BackendError, match="agent session turn failed"):
+        llm.AgentBackend().complete("sys", "user")
+
+
+def test_codex_backend_reads_answer_from_output_file(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run(cmd, *a, **kw):
+        captured["cmd"] = cmd
+        captured["input"] = kw.get("input")
+        out_path = cmd[cmd.index("-o") + 1]
+        Path(out_path).write_text('{"verdict": "supported", "reason": "x"}')
+        return FakeCompleted(0)
+
+    monkeypatch.setattr(llm.subprocess, "run", fake_run)
+    result = llm.CodexBackend().complete("SYSTEM", "USERPROMPT")
+    assert result == {"verdict": "supported", "reason": "x"}
+    assert captured["cmd"][:2] == ["codex", "exec"]
+    assert "-a" not in captured["cmd"]
+    assert "--ask-for-approval" not in captured["cmd"]
+    assert captured["cmd"][-1] == "-"  # prompt read from stdin, not argv
     assert "SYSTEM" in captured["input"] and "USERPROMPT" in captured["input"]
+
+
+def test_codex_backend_surfaces_stderr_on_nonzero_exit(monkeypatch):
+    stderr = "fatal: " + "x" * 1000
+
+    def fake_run(cmd, *a, **kw):
+        return FakeCompleted(2, stdout="", stderr=stderr)
+
+    monkeypatch.setattr(llm.subprocess, "run", fake_run)
+    with pytest.raises(llm.BackendError) as excinfo:
+        llm.CodexBackend().complete("sys", "user")
+    msg = str(excinfo.value)
+    assert "exit 2" in msg
+    assert stderr[:500] in msg
+    assert stderr not in msg
 
 
 def test_replay_cache_write_is_atomic(tmp_path):

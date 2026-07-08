@@ -65,7 +65,7 @@ class _OkDet:
 def test_cli_llm_run_reports_narrative_provenance(monkeypatch, capsys, tmp_path):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setenv("OPENAI_API_KEY", "y")
-    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_OkDet(), _Ver()))
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_OkDet(), _Ver()))
     nb = {"cells": [
         {"cell_type": "code", "source": "x = 1\n", "outputs": [],
          "execution_count": None, "metadata": {}},
@@ -82,7 +82,7 @@ def test_cli_llm_backend_failure_exits_3_fail_loud(monkeypatch, capsys):
     # the dropped backend error propagates to the CLI, which exits 3.
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setenv("OPENAI_API_KEY", "y")
-    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_Det(), _Ver()))
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_Det(), _Ver()))
     assert main(["check", "--llm", LEAKY]) == 3
     err = capsys.readouterr().err
     assert "narrative layer failed" in err
@@ -270,7 +270,7 @@ def test_rollup_never_for_json_even_on_tty(monkeypatch, tmp_path, capsys):
 def test_llm_progress_on_tty_stderr_only(monkeypatch, tmp_path, capsys):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setenv("OPENAI_API_KEY", "y")
-    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_OkDet(), _Ver()))
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_OkDet(), _Ver()))
     monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
     _write(tmp_path, "a.ipynb", CLEAN_NB)
     _write(tmp_path, "b.ipynb", CLEAN_NB)
@@ -285,7 +285,7 @@ def test_llm_progress_on_tty_stderr_only(monkeypatch, tmp_path, capsys):
 def test_llm_progress_absent_when_piped(monkeypatch, tmp_path, capsys):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setenv("OPENAI_API_KEY", "y")
-    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_OkDet(), _Ver()))
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_OkDet(), _Ver()))
     p = _write(tmp_path, "a.ipynb", CLEAN_NB)
     main(["check", "--llm", p])
     assert "checking" not in capsys.readouterr().err
@@ -294,7 +294,7 @@ def test_llm_progress_absent_when_piped(monkeypatch, tmp_path, capsys):
 def test_llm_progress_closed_before_backend_error(monkeypatch, capsys):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setenv("OPENAI_API_KEY", "y")
-    monkeypatch.setattr("wald.cli._llm_backends", lambda rd: (_Det(), _Ver()))
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_Det(), _Ver()))
     monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
     rc = main(["check", "--llm", LEAKY])
     err = capsys.readouterr().err
@@ -346,6 +346,30 @@ def test_eval_llm_missing_keys_exits_3(monkeypatch, capsys):
     assert capsys.readouterr().err == (
         "wald: --llm needs ANTHROPIC_API_KEY and OPENAI_API_KEY set in the environment\n"
     )
+
+
+def test_eval_llm_subscription_heldout_refused_before_backends(monkeypatch, capsys):
+    # --llm-subscription can never produce gate evidence (kind="agent"); refuse
+    # the heldout split up front rather than let the eval.py raise do it, and
+    # do so before _llm_backends is even called (no API keys needed to trip).
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    called = []
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: called.append(1))
+    rc = main(["eval", "--llm", "--llm-subscription", "--split", "heldout"])
+    assert rc == 3
+    assert "subscription runs cannot produce gate evidence" in capsys.readouterr().err
+    assert called == []
+
+
+def test_llm_backends_subscription_ignores_replay_dir(monkeypatch, tmp_path):
+    from wald.cli import _llm_backends
+    from wald.llm import AgentBackend, CodexBackend
+
+    det, ver = _llm_backends(str(tmp_path / "replay"), subscription=True)
+    assert isinstance(det, AgentBackend)
+    assert isinstance(ver, CodexBackend)
+    assert not (tmp_path / "replay").exists()  # never wrapped in ReplayBackend
 
 
 def test_heldout_refusal_has_prefix_and_exits_3(tmp_path, capsys):
