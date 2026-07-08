@@ -54,3 +54,27 @@ if the quote grounded, so weigh backend errors (excluded, not clean).
   - verifier: The code fits the preprocessing pipeline on all of train_data before cross_val_score creates CV folds, so each fold’s held-out rows were included when the transformers were fitted.
 - **00__ageron_handson-ml3__03_classification.ipynb** — `leakage-fit-before-split` (high, conf 0.88, narrative=True)
   - verifier: The evidence says the preprocessing pipeline was fit on all of X_train before cross_val_score, so each CV fold's held-out test rows were included in the transformer fit.
+
+## Adjudication (hand review, 2026-07-08)
+
+Both flags on `00__ageron_handson-ml3__03_classification.ipynb` are **true
+positives** — real fit-before-split leakage, not the known fit-before-split FP
+pattern (`docs/fit-before-split-fps.md`).
+
+- **Titanic (cell 186 → 194):** `X_train = preprocess_pipeline.fit_transform(train_data)`
+  then `cross_val_score(forest_clf, X_train, y_train, cv=10)`. The pipeline is
+  `SimpleImputer(strategy="median")` + scaler + `OneHotEncoder` — all stateful.
+  Medians, scaling stats, and one-hot categories are learned from the full
+  training set, so every CV fold's held-out rows were in the fit. TP; magnitude
+  mild (median imputation / scaling leak little).
+- **Spam (cell 258 → 259):** `preprocess_pipeline.fit_transform(X_train)` where
+  the pipeline ends in `WordCounterToVectorTransformer`, which learns a
+  **vocabulary** in `fit` (a vectorizer/feature-selection step). Built on the
+  full training set before `cross_val_score`, so held-out emails shaped the
+  feature space. TP, and more material than the Titanic case.
+
+Not the FP idiom: Géron calls `.fit_transform(...)` and passes the materialized
+transformed array into CV (transformers never refit per fold), rather than
+handing an unfitted `Pipeline` to `cross_val_score`. Result stands: 1/27 real
+notebooks flagged, and the catch holds up on review. Non-gate, non-reproducible
+as labeled above.
