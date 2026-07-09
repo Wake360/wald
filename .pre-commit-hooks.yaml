@@ -1,0 +1,13 @@
+- id: wald
+  name: wald (notebooks)
+  entry: wald check
+  language: python
+  types_or: [jupyter]
+  pass_filenames: true
+
+- id: wald-scripts
+  name: wald (python scripts)
+  entry: wald check
+  language: python
+  files: \.py$
+  pass_filenames: true
