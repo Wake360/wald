@@ -147,7 +147,7 @@ def cmd_check(args) -> int:
     reports = []
     sarif_entries = []
     worst = 0
-    n_high = n_med = n_clean = 0
+    n_high = n_med = n_clean = n_failed = 0
     for i, path in enumerate(notebooks, 1):
         if progress:
             print(f"\rchecking {i}/{len(notebooks)} {path}", end="", file=sys.stderr,
@@ -178,6 +178,9 @@ def cmd_check(args) -> int:
         except Exception as exc:
             close_progress()
             print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
+            if args.keep_going:
+                n_failed += 1
+                continue
             return 3
         flags = _absolutize(nb, flags)  # file-absolute lines for .py, no-op otherwise
         warning = parse_warning(len(flow.parse_errors) + len(flow.skipped_cells),
@@ -200,13 +203,15 @@ def cmd_check(args) -> int:
     close_progress()
     if args.format == "json":
         # one bare object for a single notebook (back-compat), an array for many
-        print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
+        bare = len(notebooks) == 1 and len(reports) == 1
+        print(json.dumps(reports[0] if bare else reports, indent=2))
     elif args.format == "sarif":
         print(to_sarif(sarif_entries, args.floor))
     elif len(notebooks) > 1 and sys.stdout.isatty():
+        failed = f", {n_failed} failed" if n_failed else ""
         print(f"checked {len(notebooks)} notebooks: {n_high} high, {n_med} medium, "
-              f"{n_clean} clean", file=sys.stderr)
-    return worst
+              f"{n_clean} clean{failed}", file=sys.stderr)
+    return max(worst, 3 if n_failed else 0)
 
 
 def cmd_eval(args) -> int:
@@ -289,6 +294,9 @@ def main(argv=None) -> int:
                          help="run the narrative layer through the claude/codex CLIs "
                               "(subscription billing, no API keys); never gate-eligible")
     p_check.add_argument("--replay-dir", help="record/replay LLM responses here")
+    p_check.add_argument("--keep-going", action="store_true",
+                         help="continue past unreadable files (reported on stderr); "
+                              "exit 3 if any file could not be checked")
     p_check.set_defaults(func=cmd_check)
 
     p_eval = sub.add_parser("eval", help="run detectors over the corpus, write dated report")

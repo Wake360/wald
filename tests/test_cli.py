@@ -453,3 +453,95 @@ def test_heldout_refusal_has_prefix_and_exits_3(tmp_path, capsys):
     ])
     assert rc == 3
     assert capsys.readouterr().err.startswith("wald: ")
+
+
+# --- WS5: --keep-going ------------------------------------------------------
+
+
+def test_keep_going_mixed_batch_reports_good_exits_3(tmp_path, capsys):
+    _write(tmp_path, "a_good.ipynb", CLEAN_NB)
+    _write(tmp_path, "b_bad.ipynb", "{not json")
+    _write(tmp_path, "c_good.ipynb", CLEAN_NB)
+    rc = main(["check", "--keep-going", str(tmp_path)])
+    out, err = capsys.readouterr()
+    assert rc == 3
+    assert out.count("# Wald report") == 2
+    assert err.count("wald: ") == 1
+
+
+def test_keep_going_all_fail_exits_3(tmp_path, capsys):
+    _write(tmp_path, "a_bad.ipynb", "{not json")
+    _write(tmp_path, "b_bad.ipynb", "{also not json")
+    rc = main(["check", "--keep-going", str(tmp_path)])
+    out, err = capsys.readouterr()
+    assert rc == 3
+    assert out.count("# Wald report") == 0
+    assert err.count("wald: ") == 2
+
+
+def test_keep_going_high_plus_failure_exits_3(tmp_path, capsys):
+    _write(tmp_path, "a_leaky.ipynb", Path(LEAKY).read_text())
+    _write(tmp_path, "b_bad.ipynb", "{not json")
+    rc = main(["check", "--keep-going", str(tmp_path)])
+    assert rc == 3  # a high finding alone would exit 2; a failure forces 3
+
+
+def test_keep_going_json_array_with_failure(tmp_path, capsys):
+    _write(tmp_path, "a_good.ipynb", CLEAN_NB)
+    _write(tmp_path, "b_bad.ipynb", "{not json")
+    rc = main(["check", "--keep-going", "--format", "json", str(tmp_path)])
+    data = json.loads(capsys.readouterr().out)
+    assert rc == 3
+    assert isinstance(data, list)
+    assert len(data) == 1
+
+
+def test_keep_going_json_single_success_bare_object(tmp_path, capsys):
+    p = _write(tmp_path, "clean.ipynb", CLEAN_NB)
+    rc = main(["check", "--keep-going", "--format", "json", p])
+    data = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert isinstance(data, dict)  # back-compat: single notebook stays a bare object
+
+
+def test_keep_going_rollup_counts_failures_on_tty(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("NO_COLOR", "1")
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    _write(tmp_path, "a_leaky.ipynb", Path(LEAKY).read_text())
+    _write(tmp_path, "b_clean.ipynb", CLEAN_NB)
+    _write(tmp_path, "c_bad.ipynb", "{not json")
+    main(["check", "--keep-going", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert "checked 3 notebooks: 1 high, 0 medium, 1 clean, 1 failed" in err
+
+
+def test_keep_going_llm_backend_error_still_hard_aborts(monkeypatch, capsys):
+    # the --llm backend-error abort must never soften, even with --keep-going.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "y")
+    monkeypatch.setattr("wald.cli._llm_backends", lambda rd, subscription=False: (_Det(), _Ver()))
+    rc = main(["check", "--llm", "--keep-going", LEAKY])
+    err = capsys.readouterr().err
+    assert rc == 3
+    assert "narrative layer failed" in err
+
+
+def test_keep_going_heldout_refusal_still_aborts(tmp_path, capsys):
+    # the held-out gate-only refusal must never soften, even with --keep-going.
+    (tmp_path / "clean").mkdir()
+    (tmp_path / "clean" / "foo.ipynb").write_text(
+        '{"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}'
+    )
+    (tmp_path / "MANIFEST.json").write_text(json.dumps({
+        "clean": [{"file": "clean/foo.ipynb", "split": "heldout"}], "mutants": [],
+    }))
+    (tmp_path / "replay" / "detector").mkdir(parents=True)
+    (tmp_path / "replay" / "verifier").mkdir(parents=True)
+    rc = main([
+        "check", "--llm", "--keep-going", "--replay-dir", str(tmp_path / "replay"),
+        str(tmp_path / "clean" / "foo.ipynb"),
+    ])
+    assert rc == 3
+    assert capsys.readouterr().err.startswith("wald: ")
+
+
