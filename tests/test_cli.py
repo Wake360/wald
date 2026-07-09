@@ -545,3 +545,30 @@ def test_keep_going_heldout_refusal_still_aborts(tmp_path, capsys):
     assert capsys.readouterr().err.startswith("wald: ")
 
 
+def test_llm_subscription_missing_clis_exits_3(monkeypatch, capsys):
+    monkeypatch.setattr("wald.cli.shutil.which", lambda name: None)
+    rc = main(["check", "--llm", "--llm-subscription", LEAKY])
+    assert rc == 3
+    assert capsys.readouterr().err == (
+        "wald: --llm-subscription needs the claude and codex CLIs on PATH\n"
+    )
+
+
+def test_rules_lists_all_taxonomy_ids(capsys):
+    from wald.taxonomy import load_taxonomy
+
+    rc = main(["rules"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    for fid in load_taxonomy():
+        assert fid in out
+
+
+def test_rules_json_valid(capsys):
+    rc = main(["rules", "--format", "json"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    data = json.loads(out)
+    assert len(data) == 9
+    for d in data:
+        assert set(d) == {"id", "layer", "severity", "definition", "book_anchor"}

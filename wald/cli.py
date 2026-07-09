@@ -6,6 +6,7 @@ import argparse
 import importlib.metadata
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -19,6 +20,11 @@ from .report import _colorize, exit_code, parse_warning, report_obj, to_markdown
 
 # environment variable each api backend needs before it can make a request
 _KEY_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
+
+
+def _missing_subscription_clis() -> bool:
+    """True if --llm-subscription can't shell out: claude and/or codex isn't on PATH."""
+    return not (shutil.which("claude") and shutil.which("codex"))
 
 
 def _llm_backends(replay_dir, subscription=False):
@@ -124,6 +130,10 @@ def cmd_check(args) -> int:
         return 3
     det = ver = None
     if args.llm:
+        if args.llm_subscription and _missing_subscription_clis():
+            print("wald: --llm-subscription needs the claude and codex CLIs on PATH",
+                  file=sys.stderr)
+            return 3
         det, ver = _llm_backends(args.replay_dir, subscription=args.llm_subscription)
         missing = _missing_llm_keys(det, ver)
         if missing:
@@ -223,6 +233,10 @@ def cmd_eval(args) -> int:
                   "ANTHROPIC_API_KEY + OPENAI_API_KEY for the held-out gate",
                   file=sys.stderr)
             return 3
+        if args.llm_subscription and _missing_subscription_clis():
+            print("wald: --llm-subscription needs the claude and codex CLIs on PATH",
+                  file=sys.stderr)
+            return 3
 
         det, ver = _llm_backends(args.replay_dir, subscription=args.llm_subscription)
         missing = _missing_llm_keys(det, ver)
@@ -258,6 +272,25 @@ def cmd_corpus_build(args) -> int:
     from .corpus import build_corpus
 
     build_corpus(args.root, seeds=tuple(args.seeds))
+    return 0
+
+
+def cmd_rules(args) -> int:
+    from .taxonomy import load_taxonomy
+
+    defs = sorted(load_taxonomy().values(), key=lambda d: d.id)
+    if args.format == "json":
+        print(json.dumps([
+            {"id": d.id, "layer": d.layer, "severity": d.severity,
+             "definition": " ".join(d.definition.split()), "book_anchor": d.book_anchor}
+            for d in defs
+        ], indent=2))
+        return 0
+    for d in defs:
+        print(d.id)
+        print(f"{d.layer} {d.severity}")
+        print(" ".join(d.definition.split()))
+        print()
     return 0
 
 
@@ -322,6 +355,11 @@ def main(argv=None) -> int:
                          help="dev-split base seeds, one clean notebook per family "
                               "per seed (default: %(default)s)")
     p_build.set_defaults(func=cmd_corpus_build)
+
+    p_rules = sub.add_parser("rules", help="list the flaw classes wald checks")
+    p_rules.add_argument("--format", choices=["text", "json"], default="text",
+                         help="json emits a JSON array of flaw objects (default: %(default)s)")
+    p_rules.set_defaults(func=cmd_rules)
 
     args = parser.parse_args(argv)
     return args.func(args)
