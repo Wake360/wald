@@ -29,3 +29,16 @@ jobs:
         with:
           name: eval-report-${{ matrix.python-version }}
           path: evals/
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --extra corpus --extra dev
+      - run: uvx ruff check wald/ tests/
+      - run: uvx pyright wald/
+      # unit tests only: no corpus build, gates, or eval (they need Jupyter kernel execution)
+      - run: uv run pytest tests/ --ignore=tests/test_gates.py -q
