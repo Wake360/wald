@@ -115,6 +115,12 @@ run the gate; nothing here needs re-deriving.
   review; the over-cap path is already fixed via `skipped_cells`).
   Follow-up: bound the leading `\w+` or pre-filter to lines containing
   `.query(`.
+- **The 0.3.0 depth-guard fix over-counts scientific-notation literals**
+  — `_structural_depth` now keys off the character preceding a `+`/`-`
+  rather than the one following it, so a cell containing 500+ e-notation
+  floats (`1e-5`, `2e+3`, ...) gets depth-skipped even though libcst
+  would parse it fine. Safe direction (over-skip, not a crash); noted by
+  the reviewer 2026-07-09.
 
 ## Termination rule (from the plan, unchanged)
 
