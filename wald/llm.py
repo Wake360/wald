@@ -266,7 +266,7 @@ class CodexBackend:
                 raise BackendError(
                     f"agent session failed (exit {result.returncode}): {result.stderr[:500]}"
                 )
-            return Path(out_path).read_text()
+            return Path(out_path).read_text(encoding="utf-8")
         finally:
             Path(out_path).unlink(missing_ok=True)
 

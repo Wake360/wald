@@ -26,7 +26,7 @@ class FlawDef:
 
 @lru_cache(maxsize=1)
 def load_taxonomy() -> dict[str, FlawDef]:
-    raw = yaml.safe_load(FLAWS_PATH.read_text())
+    raw = yaml.safe_load(FLAWS_PATH.read_text(encoding="utf-8"))
     defs = {}
     for r in raw:
         defs[r["id"]] = FlawDef(
@@ -71,7 +71,7 @@ class FusionRule:
 
 @lru_cache(maxsize=1)
 def load_fusion_rules() -> tuple[FusionRule, ...]:
-    raw = yaml.safe_load(FUSION_PATH.read_text())
+    raw = yaml.safe_load(FUSION_PATH.read_text(encoding="utf-8"))
     rules = []
     for r in raw:
         static = r["static"]

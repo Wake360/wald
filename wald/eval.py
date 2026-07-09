@@ -170,7 +170,7 @@ def run_eval(corpus_root: str | Path, out_dir: str | Path = "evals") -> dict:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{results['date']}-eval.json").write_text(json.dumps(results, indent=2))
-    (out / f"{results['date']}-eval.md").write_text(render_report(results))
+    (out / f"{results['date']}-eval.md").write_text(render_report(results), encoding="utf-8")
     return results
 
 
@@ -444,5 +444,5 @@ def run_llm_eval(corpus_root: str | Path, det_backend, ver_backend,
     out.mkdir(parents=True, exist_ok=True)
     stem = f"{results['date']}-llm-eval-{results['split']}"
     (out / f"{stem}.json").write_text(json.dumps(results, indent=2))
-    (out / f"{stem}.md").write_text(render_llm_report(results))
+    (out / f"{stem}.md").write_text(render_llm_report(results), encoding="utf-8")
     return results

@@ -162,7 +162,7 @@ def test_check_color_honors_no_color(monkeypatch, capsys):
 def test_check_piped_matches_golden(monkeypatch, capsys):
     monkeypatch.chdir(REPO)
     main(["check", "examples/leaky.ipynb"])
-    assert capsys.readouterr().out == GOLDEN.read_text()
+    assert capsys.readouterr().out == GOLDEN.read_text(encoding="utf-8")
 
 
 # --- WS3: .py script support ------------------------------------------------
@@ -218,7 +218,7 @@ def test_leaky_py_example_exits_2(monkeypatch, capsys):
     monkeypatch.chdir(REPO)
     rc = main(["check", "examples/leaky.py"])
     assert rc == 2
-    assert capsys.readouterr().out == GOLDEN_PY.read_text()
+    assert capsys.readouterr().out == GOLDEN_PY.read_text(encoding="utf-8")
 
 
 def test_expand_notebooks_ignores_py_in_dirs(tmp_path, capsys):
