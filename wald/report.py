@@ -147,7 +147,12 @@ def to_sarif(entries: list[tuple[str, list[Flag]]], floor: float = DEFAULT_CONFI
     results = []
     candidates = []
     for path, flags in entries:
-        uri = os.path.relpath(path)
+        try:
+            uri = os.path.relpath(path)
+        except ValueError:
+            # relpath can't cross drives on Windows (e.g. a temp dir on a
+            # different drive than cwd); fall back to an absolute path
+            uri = os.path.abspath(path)
         for f in flags:
             if f.confidence < floor:
                 candidates.append({

@@ -341,15 +341,18 @@ def _structural_depth(source: str) -> int:
     within a statement: left-associative chains such as ``a[0][0][0]`` and
     ``a.b.c`` do not nest lexically (bracket depth stays flat) but do nest in the
     AST, so opens are never decremented — the running count only resets at a
-    statement boundary (a newline or ``;`` outside brackets). Numeric literals
-    (``-1``, ``1e-5``, ``3.14``) are excluded so ordinary data does not trip the
-    guard. Over-approximate by design: a flagged cell is skipped, never parsed.
+    statement boundary (a newline or ``;`` outside brackets). A leading sign
+    (``-1``, ``+1``) is excluded since it follows a non-operand character
+    (start of expression, another operator, an open bracket, a comma); binary
+    ``+``/``-`` between operands always counts, even bare digit-to-digit
+    (``1+1``) — checking what precedes rather than what follows, since a chain
+    like ``1+1+1+...`` has a digit on both sides of every operator either way.
+    Over-approximate by design: a flagged cell is skipped, never parsed.
     """
     peak = 0
     run = 0
     bracket = 0
     prev = ""
-    n = len(source)
     for i, ch in enumerate(source):
         drive = False
         if ch in "([{":
@@ -363,8 +366,7 @@ def _structural_depth(source: str) -> int:
         elif ch in _DEPTH_OPERATOR_CHARS:
             drive = True
         elif ch in "+-":
-            nxt = source[i + 1] if i + 1 < n else ""
-            drive = not nxt.isdigit()  # binary operator, not a signed/exponent literal
+            drive = prev.isalnum() or prev in ")]}\"'_"
         elif ch in "\n;" and bracket == 0:
             run = 0
         if drive:
