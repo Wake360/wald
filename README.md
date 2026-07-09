@@ -13,6 +13,8 @@ Named after Abraham Wald, who armored the bullet holes that *weren't* in the
 returning planes. The tool's mentality is his: don't ask what the data says —
 ask what data is missing and what that does to the conclusion.
 
+Read the story: [I mutation-tested statistical malpractice](posts/2026-07-04-i-mutation-tested-statistical-malpractice.md).
+
 ```
 $ wald check examples/leaky.ipynb
 
@@ -136,6 +138,12 @@ is invisible to any tool that reads notebooks. Wald claims only the
 detectable classes, and the taxonomy (`wald/taxonomy/flaws.yaml`) is the
 complete, versioned list of what it checks.
 
+`.py` scripts have no stored cell outputs, so `baserate-accuracy-imbalanced`
+(which reads a `value_counts` output) can only ever emit a below-floor
+candidate on a script, never a confident flag. `--llm` needs markdown cells
+to check claims against computation, so it is meaningful on percent-format
+scripts and not on plain scripts, which have none.
+
 ## GitHub Action
 
 `Wake360/wald@v0.2.1` is a composite action that installs `wald-lint`, runs
@@ -193,6 +201,27 @@ jobs:
         run: exit ${{ steps.wald.outputs.gate-exit-code }}
 ```
 
+## Pre-commit
+
+`.pre-commit-hooks.yaml` ships two hooks: `wald` for `.ipynb` files,
+`wald-scripts` for `.py` files.
+
+```yaml
+repos:
+  - repo: https://github.com/Wake360/wald
+    rev: v0.3.0
+    hooks:
+      - id: wald
+      - id: wald-scripts
+```
+
+pre-commit fails the hook on any nonzero exit, so both exit 1 (a medium
+finding) and exit 2 (a high finding) block the commit — raise `--floor`
+via `args` if you want fewer low-confidence findings to count as
+confident. `wald-scripts` runs on every changed `.py` file, so if your
+repo has many non-analysis scripts, scope it with `files:`/`exclude:`
+in your own pre-commit config.
+
 ## Architecture
 
 ```
@@ -210,21 +239,35 @@ notebook ──> ingest (nbformat) ──> layer A: static detectors ──> rep
 The hybrid split is the point: leakage is an AST pattern — an LLM has no
 business there. The LLM layer handles only what statics cannot: whether
 the prose claims match what the code computes. It is built and tested
-key-free against replay fixtures; its quality gates (G2/G3) have not run
-yet — they need Anthropic + OpenAI keys — so no narrative-layer numbers
-are claimed. Static-only is the default; without `--llm`, Wald calls no
-API.
+key-free against replay fixtures, but its quality gates (G2/G3) never
+ran — they need Anthropic + OpenAI keys, and the keys never arrived. Per
+the project's pre-planned termination rule, **v1 ships as the static
+linter only; no narrative-layer numbers are claimed here.**
 
-Taxonomy is data (`flaws.yaml`): 8 flaw classes with definition, book
-anchor, mutation recipe and severity. Adding a class = a record + a
-detector + a mutation; prompts and reports generate from the same file, so
-documentation and detector cannot drift.
+The narrative layer stays in the repo as an experimental, unvalidated
+path: `--llm-subscription` runs it through the `claude`/`codex` CLIs
+(subscription billing, no API keys), and `--llm` runs it against the
+Anthropic/OpenAI APIs for anyone holding both keys. Neither path has
+passed a quality gate. An indicative, non-gate dev-split run over the
+subscription backend is at
+`evals/2026-07-09-llm-eval-dev-subscription-indicative.md` — unpinned
+models, not reproducible, and 17 of its files hit backend errors and
+were excluded, so read it as a snapshot, not evidence. Static-only is
+the default; without `--llm` or `--llm-subscription`, Wald calls no API.
+
+Taxonomy is data (`flaws.yaml`): 9 flaw classes with definition, book
+anchor, mutation recipe and severity (`wald rules` lists them). Adding a
+class = a record + a detector + a mutation; prompts and reports generate
+from the same file, so documentation and detector cannot drift.
 
 ## Install & use
 
 ```bash
 pip install wald-lint
 wald check notebook.ipynb            # exit 0 clean / 1 medium / 2 high / 3 input or usage error
+wald check analysis.py               # plain script, or percent-format (# %% cell markers)
+wald check notebooks/ --keep-going   # continue past unreadable files; exit 3 if any file failed
+wald rules                           # list the flaw classes wald checks; --format json for machines
 ```
 
 Contributing to Wald itself:
@@ -241,7 +284,22 @@ pytest                               # unit tests + golden gates G0/G1
 ```
 
 `examples/leaky.ipynb` ships in the repo and reproduces the report shown
-at the top of this file.
+at the top of this file. `examples/leaky.py` is the same analysis as a
+percent-format script.
+
+Directory arguments still collect only `*.ipynb`; pass a `.py` file
+explicitly. Reported lines for `.py` input are file-absolute (not
+relative to the cell); the markdown report keeps `cell N, line M`, where
+`N` is the percent-cell's ordinal position in the file.
+
+By default `wald check` aborts on the first unreadable file. `--keep-going`
+continues instead: each unreadable file is reported to stderr and the run
+still exits 3 if any file failed — even alongside a high-severity finding
+elsewhere in the batch, which would otherwise exit 2. The multi-file TTY
+summary line gains a `, N failed` suffix.
+
+`wald rules` lists the flaw classes from the taxonomy (id, layer, severity,
+definition); `--format json` emits the same data as a JSON array.
 
 Wald never executes *your* notebook (static analysis + stored outputs
 only). Only self-authored corpus notebooks are executed, at corpus build
@@ -250,9 +308,11 @@ time, to verify mutations.
 ## Roadmap
 
 - **M2** — LLM narrative layer + cross-provider verifier + fusion: built,
-  tested key-free against replay fixtures (`plans/m2.md`). Remaining: the
-  G2/G3 gate runs (F1 ≥ 0.7, verifier kills ≥ 80% of seeded false flags),
-  blocked on Anthropic + OpenAI keys.
+  tested key-free against replay fixtures (`plans/m2.md`). The G2/G3 gate
+  runs (F1 ≥ 0.7, verifier kills ≥ 80% of seeded false flags) never
+  happened — the two API keys never arrived. Per the termination rule,
+  v1 closes with the static layer only; the gate harness stays intact for
+  whoever runs it with keys.
 - **M3** — table consistency checks (cohort sums vs. declared population).
 - **M4** — GitHub Action with PR annotations, severity calibration.
   (Dogfood on real licensed notebooks: done, `evals/2026-07-04-dogfood.md`.)

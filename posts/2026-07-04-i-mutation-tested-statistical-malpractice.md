@@ -116,3 +116,31 @@ against what the code computes — came next, measured the same way,
 because by then there was something honest to measure it against.
 
 The code is at github.com/Wake360/wald.
+
+## Addendum, 2026-07-09
+
+Second real-world contact: 60 fresh notebooks, pulled from GitHub, none
+overlapping the 34 from the first run. wald flagged 13 of them, 28 flags
+total. After review and adversarial verification: 25 of 28 flags
+confirmed real (0.89 flag precision), 12 of 13 flagged notebooks
+contained a genuine leak (0.92 notebook precision). This is leakage
+classes only — the testing and base-rate detectors produced zero
+confirmed real instances on this sample, so no real-world number is
+claimed for them.
+
+The corpus's 0.0% false-positive rate does not carry over. One flag was
+a genuine false positive: an RFECV scout-subsample pattern where
+`fit_transform` runs on an already-split `X_train`, and the downstream
+`train_test_split` only carves off a discarded feature-selection scout
+set, not the evaluation split. On curated clean notebooks wald is clean;
+on messy real code it is not perfect.
+
+This run also produced the first defensible recall number: 12 of 20
+leaky notebooks caught over a 43-notebook audited subset (0.60),
+where the subset is the 13 flagged notebooks plus a 30-notebook
+stratified miss-hunt sample. It's a one-seed estimate over that subset,
+not the full 60, and leans upper-bound — the 17 unflagged notebooks that
+weren't sampled may hide further misses. Ground truth throughout is
+adversarial LLM review (one TP/FP reviewer per notebook, miss-hunters,
+a verifier that defaulted to refuted unless the leak was airtight), not
+expert human labeling, so weight it accordingly.
