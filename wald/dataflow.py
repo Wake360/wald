@@ -286,6 +286,7 @@ class NotebookDataflow:
     calls: list[CallSite] = field(default_factory=list)
     assigns: list[AssignEvent] = field(default_factory=list)
     parse_errors: list[int] = field(default_factory=list)  # cell indices that failed to parse
+    skipped_cells: list[int] = field(default_factory=list)  # cell indices skipped by a size/depth cap
     _by_name: dict[str, list[AssignEvent]] | None = field(default=None, repr=False)
 
     def last_assign(self, name: str, before: tuple[int, int]) -> AssignEvent | None:
@@ -379,8 +380,10 @@ def analyze(nb: ParsedNotebook) -> NotebookDataflow:
     flow = NotebookDataflow()
     for cell in nb.code_cells:
         if len(cell.source) > MAX_CELL_SOURCE_BYTES:
+            flow.skipped_cells.append(cell.index)  # surfaced as a partial-results warning
             continue  # oversized cell: skip to keep runtime bounded
         if _structural_depth(cell.source) > MAX_CELL_NEST_DEPTH:
+            flow.skipped_cells.append(cell.index)
             continue  # deep nesting overflows the native parser stack: skip
         # valid Python first: a leading "%" can be a formatting continuation
         # line, not a magic, and stripping it would break the parse

@@ -9,7 +9,9 @@ from wald.llm import BackendError
 
 REPO = Path(__file__).parent.parent
 LEAKY = str(REPO / "examples" / "leaky.ipynb")
+LEAKY_PY = str(REPO / "examples" / "leaky.py")
 GOLDEN = Path(__file__).parent / "golden" / "leaky.md"
+GOLDEN_PY = Path(__file__).parent / "golden" / "leaky-py.md"
 
 CLEAN_NB = json.dumps({"cells": [
     {"cell_type": "code", "source": "x = 1\n", "outputs": [],
@@ -161,6 +163,69 @@ def test_check_piped_matches_golden(monkeypatch, capsys):
     monkeypatch.chdir(REPO)
     main(["check", "examples/leaky.ipynb"])
     assert capsys.readouterr().out == GOLDEN.read_text()
+
+
+# --- WS3: .py script support ------------------------------------------------
+
+
+def test_check_py_md_reports_absolute_lines(tmp_path, capsys):
+    src = (
+        "# %% [markdown]\n# header\n# %%\n"
+        "from sklearn.preprocessing import StandardScaler\n"
+        "from sklearn.model_selection import train_test_split\n"
+        "s = StandardScaler()\n"
+        "X = s.fit_transform(X)\n"
+        "X_tr, X_te = train_test_split(X, y)\n"
+    )
+    p = _write(tmp_path, "leak.py", src)
+    rc = main(["check", p])
+    out = capsys.readouterr().out
+    assert rc == 2
+    # fit_transform is on file line 7 (cell 1 starts at file line 4)
+    assert "- **Where:** cell 1, line 7" in out
+
+
+def test_check_py_sarif_startline_absolute(capsys):
+    rc = main(["check", "--format", "sarif", LEAKY_PY])
+    assert rc == 2
+    sarif = json.loads(capsys.readouterr().out)
+    result = sarif["runs"][0]["results"][0]
+    assert result["locations"][0]["physicalLocation"]["region"]["startLine"] == 44
+    assert "cell 5, line 44" in result["message"]["text"]
+    assert result["properties"]["cell"] == 5
+
+
+def test_py_json_line_is_file_absolute(capsys):
+    rc = main(["check", "--format", "json", LEAKY_PY])
+    assert rc == 2
+    data = json.loads(capsys.readouterr().out)
+    flag = data["flags"][0]
+    assert flag["cell"] == 5 and flag["line"] == 44  # line is file-absolute
+
+
+def test_py_oversized_single_cell_warns_partial(tmp_path, capsys):
+    from wald.dataflow import MAX_CELL_SOURCE_BYTES
+
+    big = "a = 1  # " + "A" * (MAX_CELL_SOURCE_BYTES + 1) + "\n"
+    p = _write(tmp_path, "big.py", big)
+    rc = main(["check", p])
+    out = capsys.readouterr().out
+    assert rc == 0  # a skipped cell does not raise severity
+    assert "results are partial" in out
+
+
+def test_leaky_py_example_exits_2(monkeypatch, capsys):
+    monkeypatch.chdir(REPO)
+    rc = main(["check", "examples/leaky.py"])
+    assert rc == 2
+    assert capsys.readouterr().out == GOLDEN_PY.read_text()
+
+
+def test_expand_notebooks_ignores_py_in_dirs(tmp_path, capsys):
+    (tmp_path / "a.py").write_text("x = 1\n")  # directory has .py but no .ipynb
+    rc = main(["check", str(tmp_path)])
+    assert rc == 3
+    assert capsys.readouterr().err == f"wald: {tmp_path}: no .ipynb files found\n"
 
 
 # --- WS2: directory recursion ----------------------------------------------

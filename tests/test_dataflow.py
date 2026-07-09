@@ -158,3 +158,12 @@ def test_oversized_cell_skipped():
     # oversized cell 0 is skipped, cell 1 is still analyzed
     assert all(c.cell == 1 for c in flow.calls)
     assert flow.parse_errors == []
+
+
+def test_oversized_cell_records_skipped():
+    from wald.dataflow import MAX_CELL_SOURCE_BYTES
+
+    big = "a = 1  # " + "A" * (MAX_CELL_SOURCE_BYTES + 1)
+    flow = analyze(nb_from_sources(big))
+    assert flow.skipped_cells == [0]  # surfaced as a partial-results warning
+    assert flow.parse_errors == []  # a cap skip is not a parse failure

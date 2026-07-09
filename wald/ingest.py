@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,6 +17,7 @@ class Cell:
     cell_type: str  # "code" | "markdown"
     source: str
     outputs_text: str = ""  # concatenated text of stored outputs (code cells)
+    start_line: int = 1  # 1-indexed file line of the cell's first source line (scripts)
 
 
 @dataclass
@@ -57,8 +59,10 @@ MAX_NOTEBOOK_CELLS = 5000
 
 
 def parse_notebook(path: str | Path) -> ParsedNotebook:
+    if Path(path).suffix == ".py":
+        return parse_script(path)
     if Path(path).is_file() and Path(path).stat().st_size > MAX_NOTEBOOK_BYTES:
-        raise ValueError("notebook exceeds 20 MB cap")
+        raise ValueError("input exceeds 20 MB cap")
     with warnings.catch_warnings():
         # valid older notebooks lack per-cell `id`; nbformat's read-time
         # validate() warns about it, which is not a wald-level problem
@@ -70,8 +74,53 @@ def parse_notebook(path: str | Path) -> ParsedNotebook:
             # surface as ValueError so the CLI maps it to a clean exit 3
             raise ValueError("not a valid notebook (malformed structure)") from exc
     if len(nb.cells) > MAX_NOTEBOOK_CELLS:
-        raise ValueError("notebook exceeds 5000-cell cap")
+        raise ValueError("input exceeds 5000-cell cap")
     return from_nbnode(nb, path=Path(path))
+
+
+_PERCENT_MARKER = re.compile(r"^#\s*%%")
+
+
+def _strip_comment(line: str) -> str:
+    if line.startswith("# "):
+        return line[2:]
+    if line.startswith("#"):
+        return line[1:]
+    return line
+
+
+def parse_script(path: str | Path) -> ParsedNotebook:
+    """Percent-format (`# %%`) or plain .py script -> ParsedNotebook. A file
+    with no markers is one code cell; markers split cells, and a `[markdown]`
+    marker turns the following comment block into a markdown cell. start_line
+    is the 1-indexed file line of each cell's first source line."""
+    p = Path(path)
+    if p.is_file() and p.stat().st_size > MAX_NOTEBOOK_BYTES:
+        raise ValueError("input exceeds 20 MB cap")
+    text = p.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    markers = [i for i, ln in enumerate(lines) if _PERCENT_MARKER.match(ln)]
+    if not markers:
+        return ParsedNotebook(path=p, cells=[
+            Cell(index=0, cell_type="code", source=text, start_line=1),
+        ])
+    cells: list[Cell] = []
+    if markers[0] > 0 and any(ln.strip() for ln in lines[:markers[0]]):
+        cells.append(Cell(index=0, cell_type="code",
+                          source="\n".join(lines[:markers[0]]), start_line=1))
+    for j, m in enumerate(markers):
+        end = markers[j + 1] if j + 1 < len(markers) else len(lines)
+        body = lines[m + 1:end]
+        if "[markdown]" in lines[m]:
+            cells.append(Cell(index=len(cells), cell_type="markdown",
+                              source="\n".join(_strip_comment(ln) for ln in body),
+                              start_line=m + 2))
+        else:
+            cells.append(Cell(index=len(cells), cell_type="code",
+                              source="\n".join(body), start_line=m + 2))
+    if len(cells) > MAX_NOTEBOOK_CELLS:
+        raise ValueError("input exceeds 5000-cell cap")
+    return ParsedNotebook(path=p, cells=cells)
 
 
 def from_nbnode(nb, path: Path | None = None) -> ParsedNotebook:

@@ -570,6 +570,8 @@ def detect_survivorship_candidate(nb: ParsedNotebook, flow: NotebookDataflow) ->
     a real flag requires the narrative layer confirming a population claim."""
     flags = []
     for cell in nb.code_cells:
+        if cell.index in flow.skipped_cells:
+            continue  # oversized/deep cell dataflow skipped: keep runtime bounded
         for start, column in _survivor_filter_columns(cell.source):
             if column not in SURVIVOR_COLUMNS:
                 continue

@@ -95,6 +95,17 @@ def _expand_notebooks(paths: list[str]) -> list[str]:
     return expanded
 
 
+def _absolutize(nb, flags):
+    """Rewrite each flag's line-within-cell to a file-absolute line for .py
+    scripts, using the cell's recorded start_line. No-op for notebooks."""
+    if nb.path is None or nb.path.suffix != ".py":
+        return flags
+    for f in flags:
+        if 0 <= f.cell < len(nb.cells):
+            f.line = nb.cells[f.cell].start_line + f.line - 1
+    return flags
+
+
 def _input_error(exc: Exception) -> str:
     if isinstance(exc, FileNotFoundError):
         return "no such file"
@@ -168,7 +179,9 @@ def cmd_check(args) -> int:
             close_progress()
             print(f"wald: {path}: {_input_error(exc)}", file=sys.stderr)
             return 3
-        warning = parse_warning(len(flow.parse_errors), len(nb.code_cells))
+        flags = _absolutize(nb, flags)  # file-absolute lines for .py, no-op otherwise
+        warning = parse_warning(len(flow.parse_errors) + len(flow.skipped_cells),
+                                len(nb.code_cells))
         if args.format == "json":
             reports.append(report_obj(path, flags, args.floor, args.severity_gate, warning))
         elif args.format == "sarif":
@@ -259,7 +272,8 @@ def main(argv=None) -> int:
     )
     p_check.add_argument("notebooks", nargs="+",
                          help="notebook files or directories (searched recursively "
-                              "for *.ipynb, skipping .ipynb_checkpoints)")
+                              "for *.ipynb, skipping .ipynb_checkpoints); a .py script "
+                              "given as an explicit arg is accepted too")
     p_check.add_argument("--format", choices=["md", "json", "sarif"], default="md",
                          help="json emits one object for a single notebook, a JSON array for "
                               "several; sarif emits one SARIF 2.1.0 log for the whole invocation")

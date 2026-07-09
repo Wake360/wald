@@ -211,6 +211,21 @@ def test_survivorship_candidate_below_floor():
     assert match and match[0].confidence < 0.8
 
 
+def test_survivorship_skips_oversized_cell():
+    from wald.dataflow import MAX_CELL_SOURCE_BYTES
+
+    # an oversized cell is skipped by the dataflow caps; the survivorship
+    # detector must skip it too. scanning its raw source is O(n^2) on a long
+    # word-character run and hangs (regression: a 200 KB single-cell .py).
+    payload = 'df = df.query("status == \'active\'")  # ' + "A" * (MAX_CELL_SOURCE_BYTES + 1)
+    notebook = nb([
+        ("code", payload),
+        ("code", 'df.groupby("cohort")["ltv"].mean()'),
+    ])
+    flags = [f for f in run_static(notebook) if f.flaw_id == "selection-survivorship-cohort"]
+    assert flags == []
+
+
 def test_survivorship_candidate_flagged_on_query_idiom():
     notebook = nb([
         ("code", "df = df.query(\"status == 'active'\")"),
