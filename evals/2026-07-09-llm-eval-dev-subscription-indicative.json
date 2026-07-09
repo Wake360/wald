@@ -1,0 +1,155 @@
+{
+  "date": "2026-07-09",
+  "corpus_built": "2026-07-05",
+  "split": "dev",
+  "confidence_floor": 0.8,
+  "detector": {
+    "provider": "anthropic-agent",
+    "model": "session",
+    "kind": "agent"
+  },
+  "verifier": {
+    "provider": "codex",
+    "model": "session",
+    "kind": "agent"
+  },
+  "gate_evidence": false,
+  "backend_errors": [
+    {
+      "file": "mutated/cohort-s12__selection-survivorship-cohort__m1.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m0.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "mutated/cohort-s13__selection-survivorship-cohort__m1.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "mutated/cohort-s14__selection-survivorship-cohort__m0.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/churn-s11.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/churn-s12.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/churn-s13.ipynb",
+      "error": "backend error: agent session failed (exit 1): SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: EAGAIN: resource temporarily unavailable, read\n\n"
+    },
+    {
+      "file": "clean/churn-s14.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/abtest-s12.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/abtest-s13.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/abtest-s14.ipynb",
+      "error": "backend error: agent session failed (exit 1): SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: EAGAIN: resource temporarily unavailable, read\n\n"
+    },
+    {
+      "file": "clean/housing-s13.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/cohort-s14.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/program-s12.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/program-s13.ipynb",
+      "error": "backend error: agent session failed (exit 1): SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-lifecycle-hook.mjs\" SessionEnd] failed: EAGAIN: resource temporarily unavailable, read\n\n"
+    },
+    {
+      "file": "clean/program-s14.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    },
+    {
+      "file": "clean/forecast-s11.ipynb",
+      "error": "backend error: agent session failed (exit 1): "
+    }
+  ],
+  "usage": {
+    "detector": null,
+    "verifier": null
+  },
+  "n_clean": 28,
+  "n_clean_real": 0,
+  "narrative_classes": {
+    "regression-to-mean-claim": {
+      "tp": 8,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "selection-survivorship-cohort": {
+      "tp": 4,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "significance-meaningless": {
+      "tp": 8,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "clean_fp_rate": 0.0,
+  "clean_fp_files": [],
+  "clean_fp_caveat": null,
+  "dropped_ungrounded": {
+    "dropped": 0,
+    "raw_findings": 23,
+    "rate": 0.0
+  },
+  "g3_per_recipe": {
+    "effect-size-present": {
+      "killed": 4,
+      "total": 4,
+      "kill_rate": 1.0
+    },
+    "scoped-claim": {
+      "killed": 4,
+      "total": 4,
+      "kill_rate": 1.0
+    },
+    "control-group-present": {
+      "killed": 4,
+      "total": 4,
+      "kill_rate": 1.0
+    },
+    "wrong-code-span": {
+      "killed": 8,
+      "total": 8,
+      "kill_rate": 1.0
+    }
+  },
+  "true_flag_survival": {
+    "supported": 20,
+    "total": 20,
+    "rate": 1.0
+  },
+  "missed_mutants": []
+}
