@@ -10,7 +10,7 @@ inputs:
     default: "."
   version:
     description: wald-lint version to install from PyPI.
-    default: "0.2.1"
+    default: "0.3.0"
   fail-on:
     description: Severity that fails the gate — high, medium, or never.
     default: "medium"

@@ -146,7 +146,7 @@ scripts and not on plain scripts, which have none.
 
 ## GitHub Action
 
-`Wake360/wald@v0.2.1` is a composite action that installs `wald-lint`, runs
+`Wake360/wald@v0.3.0` is a composite action that installs `wald-lint`, runs
 `wald check` on the paths you pass, writes a SARIF 2.1.0 log, and reports a
 `gate-exit-code` mapped through `fail-on` (high, medium, or never). The
 action never fails the job itself — it exposes the code and lets your
@@ -185,7 +185,7 @@ jobs:
       - name: wald
         id: wald
         if: steps.changed.outputs.files != ''
-        uses: Wake360/wald@v0.2.1
+        uses: Wake360/wald@v0.3.0
         with:
           paths: ${{ steps.changed.outputs.files }}
           fail-on: high
